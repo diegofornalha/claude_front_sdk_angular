@@ -768,6 +768,33 @@ export class ChatPageComponent implements OnInit {
       }
     });
 
+    // UX MELHORADA: Detectar novo chat via router state
+    const navigation = this.router.getCurrentNavigation();
+    if (navigation?.extras?.state) {
+      const state = navigation.extras.state as any;
+
+      // Auto-focus no campo de mensagem se solicitado
+      if (state['shouldFocus']) {
+        setTimeout(() => {
+          const messageInput = document.querySelector('textarea[placeholder*="mensagem"]') as HTMLTextAreaElement;
+          if (messageInput) {
+            messageInput.focus();
+            // Placeholder temporário convidativo
+            const originalPlaceholder = messageInput.placeholder;
+            messageInput.placeholder = 'Comece uma nova conversa...';
+            setTimeout(() => {
+              messageInput.placeholder = originalPlaceholder;
+            }, 3000);
+          }
+        }, 300);
+      }
+
+      // Mostrar feedback de novo chat iniciado
+      if (state['isNewChat']) {
+        console.log('✨ Novo chat iniciado com transição suave');
+      }
+    }
+
     // Verificar sessionId na rota e carregar mensagens
     this.route.params.subscribe(async params => {
       const sessionId = params['sessionId'];

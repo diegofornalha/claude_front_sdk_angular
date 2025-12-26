@@ -371,9 +371,11 @@ import { Session } from '../../../../projects/claude-front-sdk/src/lib/models/se
     .new-chat {
       background: #da7756;
       color: white;
+      transition: all 0.2s ease;
     }
     .new-chat:hover {
       background: #c96a4b;
+      transform: scale(1.02);
     }
     .new-chat.active {
       background: #c96a4b;
@@ -924,13 +926,41 @@ export class SidebarComponent implements OnInit {
   }
 
   async onNewChat(): Promise<void> {
-    // NÃO criar sessão aqui - apenas limpar estado e navegar para /new
-    // A sessão será criada automaticamente quando o usuário enviar a primeira mensagem
-    // Isso evita criar sessões fantasmas/vazias
+    // UX MELHORADA: Transição suave sem reload
+
+    // 1. Feedback visual imediato no botão
+    const button = document.querySelector('.new-chat') as HTMLElement;
+    if (button) {
+      button.style.opacity = '0.6';
+      button.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        button.style.opacity = '1';
+        button.style.transform = 'scale(1)';
+      }, 200);
+    }
+
+    // 2. Limpar estado com animação fade (via ChatService)
     this.chatService.clear();
     this.chatService.setSession(null);
-    this.router.navigate(['/new']);
+
+    // 3. Navegar para /new com state indicando novo chat
+    await this.router.navigate(['/new'], {
+      state: {
+        isNewChat: true,
+        shouldFocus: true, // Sinal para auto-focus
+        showWelcome: true   // Mostrar mensagem de boas-vindas
+      }
+    });
+
+    // 4. Emitir evento para componente pai
     this.newChatRequested.emit();
+
+    // 5. Fechar menus abertos (se houver)
+    this.closeUserMenu();
+    this.closeRecentMenu();
+
+    // 6. Log para debug
+    console.log('✨ Novo chat iniciado - transição suave sem reload');
   }
 
   toggleUserMenu(): void {

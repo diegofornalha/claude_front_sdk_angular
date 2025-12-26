@@ -118,9 +118,6 @@ interface DocumentStats {
                 <span class="doc-stat-label">Angular MCP</span>
               </div>
             </div>
-            <a routerLink="/documents" class="documents-btn">
-              📄 Ver Lista de Documentos
-            </a>
           }
         </div>
       </div>
@@ -143,6 +140,12 @@ interface DocumentStats {
                 {{ isReingesting() && currentAction() === 'sdk' ? 'Reingestando...' : 'Reingestar Claude SDK' }}
               </button>
               <span class="action-desc">Adiciona documentação do Claude Agent SDK</span>
+            </div>
+            <div class="action-item">
+              <button class="action-btn angular-btn" (click)="reingestAngular()" [disabled]="isReingesting()">
+                {{ isReingesting() && currentAction() === 'angular' ? 'Reingestando...' : 'Reingestar Angular Docs' }}
+              </button>
+              <span class="action-desc">Busca documentação oficial do Angular via MCP</span>
             </div>
           </div>
           @if (actionOutput()) {
@@ -378,6 +381,13 @@ interface DocumentStats {
     .action-btn.primary:hover:not(:disabled) {
       background: #333;
     }
+    .action-btn.angular-btn {
+      background: #dd0031;
+      color: white;
+    }
+    .action-btn.angular-btn:hover:not(:disabled) {
+      background: #b8002a;
+    }
     .action-btn:disabled {
       background: #9a9a9a;
       cursor: not-allowed;
@@ -497,22 +507,6 @@ interface DocumentStats {
       font-size: 11px;
       color: #6b6b6b;
       margin-top: 4px;
-    }
-    .documents-btn {
-      display: block;
-      width: 100%;
-      padding: 12px;
-      background: #1a1a1a;
-      color: #fff;
-      text-align: center;
-      text-decoration: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      transition: background 0.15s;
-    }
-    .documents-btn:hover {
-      background: #333;
     }
 
     /* Roadmap */
@@ -685,7 +679,7 @@ export class ConfigPageComponent implements OnInit {
   isDeleting = signal(false);
   actionOutput = signal<string | null>(null);
   actionError = signal(false);
-  currentAction = signal<'backend' | 'sdk' | null>(null);
+  currentAction = signal<'backend' | 'sdk' | 'angular' | null>(null);
   watcherActive = signal(false);
 
   // Document stats
@@ -767,6 +761,73 @@ export class ConfigPageComponent implements OnInit {
   async reingestSDK(): Promise<void> {
     this.currentAction.set('sdk');
     await this.doReingest('/rag/reingest/sdk', '⏳ Processando Claude Agent SDK...');
+  }
+
+  async reingestAngular(): Promise<void> {
+    this.currentAction.set('angular');
+    this.isReingesting.set(true);
+    this.actionOutput.set('⏳ Conectando ao Angular CLI MCP Server...\n\nIsso pode levar alguns segundos na primeira execução.');
+    this.actionError.set(false);
+
+    try {
+      // Primeiro habilita o adapter
+      await fetch(`${this.configService.apiUrl}/mcp/adapters/angular-cli/enable`, {
+        method: 'POST',
+        headers: {
+          'X-API-Key': this.configService.getConfig().apiKey || ''
+        }
+      });
+
+      // Executa a ingestão síncrona
+      const response = await fetch(`${this.configService.apiUrl}/mcp/ingest/angular-cli/sync`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': this.configService.getConfig().apiKey || ''
+        },
+        body: JSON.stringify({
+          queries: [],  // Usa queries padrão
+          include_examples: true,
+          include_best_practices: true
+        })
+      });
+
+      if (!response.ok) {
+        this.actionError.set(true);
+        if (response.status === 401) {
+          this.actionOutput.set('✗ Erro 401: Não autorizado. Verifique a API Key.');
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          this.actionOutput.set(`✗ Erro ${response.status}: ${errorData.detail || response.statusText}`);
+        }
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        this.actionOutput.set(
+          `✓ Reingestão Angular concluída!\n\n` +
+          `📊 Resumo:\n` +
+          `  • ${data.documents_ingested} documento(s) ingerido(s)\n` +
+          `  • Duração: ${data.duration_seconds?.toFixed(2) || '?'}s\n` +
+          (data.errors?.length > 0 ? `\n⚠️ Avisos:\n  ${data.errors.join('\n  ')}` : '')
+        );
+
+        // Recarrega stats
+        await this.loadConfig();
+        await this.loadDocumentStats();
+      } else {
+        this.actionError.set(true);
+        this.actionOutput.set('✗ ERRO:\n' + (data.errors?.join('\n') || 'Falha desconhecida'));
+      }
+    } catch (err: any) {
+      this.actionError.set(true);
+      this.actionOutput.set('✗ ERRO: ' + (err.message || 'Erro na reingestão Angular'));
+    } finally {
+      this.isReingesting.set(false);
+      this.currentAction.set(null);
+    }
   }
 
   private async doReingest(endpoint: string, progressMessage: string): Promise<void> {
