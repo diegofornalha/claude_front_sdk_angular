@@ -19,6 +19,13 @@ interface RagConfig {
   chunk_overlap: number;
 }
 
+interface DocumentStats {
+  total: number;
+  angular: number;
+  backend: number;
+  sdk: number;
+}
+
 @Component({
   selector: 'app-config-page',
   standalone: true,
@@ -79,6 +86,41 @@ interface RagConfig {
             </div>
           } @else {
             <div class="empty-state">Sem dados disponíveis</div>
+          }
+        </div>
+      </div>
+
+      <!-- Documents Card -->
+      <div class="config-card documents-card">
+        <div class="card-header">
+          <h2>Documentos na Base</h2>
+          <a routerLink="/documents" class="view-all-link">Ver todos →</a>
+        </div>
+        <div class="card-body">
+          @if (isLoadingDocs()) {
+            <div class="loading">Carregando...</div>
+          } @else {
+            <div class="docs-stats-row">
+              <div class="doc-stat-item">
+                <span class="doc-stat-value">{{ docStats().total }}</span>
+                <span class="doc-stat-label">Total</span>
+              </div>
+              <div class="doc-stat-item backend">
+                <span class="doc-stat-value">{{ docStats().backend }}</span>
+                <span class="doc-stat-label">Backend</span>
+              </div>
+              <div class="doc-stat-item sdk">
+                <span class="doc-stat-value">{{ docStats().sdk }}</span>
+                <span class="doc-stat-label">SDK</span>
+              </div>
+              <div class="doc-stat-item angular" [class.highlight]="docStats().angular > 0">
+                <span class="doc-stat-value">{{ docStats().angular }}</span>
+                <span class="doc-stat-label">Angular MCP</span>
+              </div>
+            </div>
+            <a routerLink="/documents" class="documents-btn">
+              📄 Ver Lista de Documentos
+            </a>
           }
         </div>
       </div>
@@ -411,6 +453,68 @@ interface RagConfig {
       color: #6b6b6b;
     }
 
+    /* Documents Card */
+    .documents-card .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .view-all-link {
+      font-size: 13px;
+      color: #3b82f6;
+      text-decoration: none;
+    }
+    .view-all-link:hover {
+      text-decoration: underline;
+    }
+    .docs-stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .doc-stat-item {
+      text-align: center;
+      padding: 12px;
+      background: #faf9f5;
+      border-radius: 8px;
+    }
+    .doc-stat-item.highlight {
+      background: rgba(221, 0, 49, 0.05);
+      border: 1px solid rgba(221, 0, 49, 0.2);
+    }
+    .doc-stat-value {
+      display: block;
+      font-size: 22px;
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+    .doc-stat-item.backend .doc-stat-value { color: #3b82f6; }
+    .doc-stat-item.sdk .doc-stat-value { color: #8b5cf6; }
+    .doc-stat-item.angular .doc-stat-value { color: #dd0031; }
+    .doc-stat-label {
+      display: block;
+      font-size: 11px;
+      color: #6b6b6b;
+      margin-top: 4px;
+    }
+    .documents-btn {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      background: #1a1a1a;
+      color: #fff;
+      text-align: center;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background 0.15s;
+    }
+    .documents-btn:hover {
+      background: #333;
+    }
+
     /* Roadmap */
     .roadmap-body {
       padding: 0 !important;
@@ -584,9 +688,14 @@ export class ConfigPageComponent implements OnInit {
   currentAction = signal<'backend' | 'sdk' | null>(null);
   watcherActive = signal(false);
 
+  // Document stats
+  isLoadingDocs = signal(true);
+  docStats = signal<DocumentStats>({ total: 0, angular: 0, backend: 0, sdk: 0 });
+
   ngOnInit(): void {
     this.loadConfig();
     this.loadWatcherStatus();
+    this.loadDocumentStats();
   }
 
   async loadConfig(): Promise<void> {
@@ -599,6 +708,40 @@ export class ConfigPageComponent implements OnInit {
       console.error('Erro ao carregar config RAG:', err);
     } finally {
       this.isLoading.set(false);
+    }
+  }
+
+  async loadDocumentStats(): Promise<void> {
+    this.isLoadingDocs.set(true);
+    try {
+      const response = await fetch(`${this.configService.apiUrl}/rag/documents?limit=500`);
+      const data = await response.json();
+      const docs = data.documents || [];
+
+      // Conta documentos por categoria
+      let angular = 0, backend = 0, sdk = 0;
+
+      for (const doc of docs) {
+        const nome = (doc.nome || '').toLowerCase();
+        if (nome.includes('angular') || nome.includes('angular-cli-mcp')) {
+          angular++;
+        } else if (nome.includes('sdk') || nome.includes('claude-agent-sdk') || nome.includes('claude_agent_sdk')) {
+          sdk++;
+        } else if (nome.includes('backend') || nome.startsWith('backend -')) {
+          backend++;
+        }
+      }
+
+      this.docStats.set({
+        total: docs.length,
+        angular,
+        backend,
+        sdk,
+      });
+    } catch (err) {
+      console.error('Erro ao carregar stats de documentos:', err);
+    } finally {
+      this.isLoadingDocs.set(false);
     }
   }
 

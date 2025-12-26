@@ -36,6 +36,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/config/config-page.component').then(m => m.ConfigPageComponent)
   },
   {
+    path: 'documents',
+    loadComponent: () => import('./pages/documents/documents-page.component').then(m => m.DocumentsPageComponent)
+  },
+  {
     path: 'artifacts',
     children: [
       {
