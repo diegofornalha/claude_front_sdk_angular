@@ -1,6 +1,7 @@
-import { Component, signal, inject, OnInit, effect } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
 import { ChatComponent } from '../../../../projects/claude-front-sdk/src/lib/components/chat/chat.component';
 import { ArtifactsPanelComponent } from '../../../../projects/claude-front-sdk/src/lib/components/artifacts-panel/artifacts-panel.component';
 import { OutputsPanelComponent } from '../../../../projects/claude-front-sdk/src/lib/components/outputs-panel/outputs-panel.component';
@@ -661,12 +662,15 @@ interface ArtifactCategory {
     }
   `]
 })
-export class ChatPageComponent implements OnInit {
+export class ChatPageComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private chat = inject(ChatService);
   outputs = inject(OutputsService);  // public para usar no template
   private config = inject(ConfigService);
+
+  // CORREÇÃO: Subject para cleanup de subscriptions
+  private destroy$ = new Subject<void>();
 
   isArtifactsPanelOpen = signal(false);
   isOutputsPanelOpen = signal(false);
@@ -821,6 +825,13 @@ export class ChatPageComponent implements OnInit {
         this.loadOutputFiles(this.currentSessionId()!);
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    // Cleanup: emitir sinal de destruição para cancelar todas as subscriptions
+    this.destroy$.next();
+    this.destroy$.complete();
+    console.log('[ChatPage] Componente destruído - subscriptions limpas');
   }
 
   selectCategory(category: ArtifactCategory): void {
