@@ -79,7 +79,8 @@ export class ChatService {
     const url = `${config.apiUrl}/chat/stream`;
 
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'X-Client-Project': 'chat-angular'
     };
 
     if (config.apiKey) {
