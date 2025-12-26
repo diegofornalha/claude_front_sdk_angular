@@ -602,10 +602,16 @@ export class ToolCallsPanelComponent implements OnInit, OnDestroy {
   });
 
   constructor() {
+    // Effect que reage a mudanças no sessionId input
     effect(() => {
       const sid = this.sessionId();
       if (sid) {
+        // Atualiza o sessionId no service para que o polling use o session correto
+        this.toolCalls.setSessionId(sid);
         this.fetchDebugData(sid);
+        // Força busca imediata com novo sessionId
+        this.toolCalls.getRecent();
+        this.toolCalls.getStats();
       }
     });
   }
@@ -630,10 +636,8 @@ export class ToolCallsPanelComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
-    const sid = this.sessionId();
-    if (sid) {
-      this.toolCalls.setSessionId(sid);
-    }
+    // O effect no constructor já cuida de atualizar o sessionId quando ele mudar
+    // Aqui só iniciamos o polling
     this.toolCalls.startPolling(2000);
   }
 

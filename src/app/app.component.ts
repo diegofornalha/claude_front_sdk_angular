@@ -29,7 +29,7 @@ import { SidebarComponent } from './components/sidebar/sidebar.component';
 
     .main-content {
       flex: 1;
-      overflow: hidden;
+      overflow-y: auto;
       min-width: 0;
     }
   `]
