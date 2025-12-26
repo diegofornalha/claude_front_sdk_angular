@@ -133,4 +133,64 @@ export class SessionService {
     // Refresh sessions list
     await this.list();
   }
+
+  /**
+   * Define/remove favorito de uma sessão
+   */
+  async setFavorite(sessionId: string, favorite: boolean): Promise<void> {
+    const config = this.config.getConfig();
+    const url = `${config.apiUrl}/sessions/${sessionId}`;
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+
+    if (config.apiKey) {
+      headers['X-API-Key'] = config.apiKey;
+    }
+
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ favorite })
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    // Refresh sessions list
+    await this.list();
+  }
+
+  /**
+   * Adiciona/remove sessão de um projeto
+   */
+  async setProject(sessionId: string, projectId: string | null): Promise<void> {
+    const config = this.config.getConfig();
+    const url = `${config.apiUrl}/sessions/${sessionId}`;
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+
+    if (config.apiKey) {
+      headers['X-API-Key'] = config.apiKey;
+    }
+
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ project_id: projectId })
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    // Refresh sessions list
+    await this.list();
+  }
 }

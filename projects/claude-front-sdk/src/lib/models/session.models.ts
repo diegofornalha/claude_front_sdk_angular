@@ -5,6 +5,8 @@
 export interface Session {
   session_id: string;
   title?: string | null;  // Título customizado (opcional)
+  favorite?: boolean;  // Favorito
+  project_id?: string | null;  // Projeto atribuído
   file: string;
   file_name: string;
   db_file: string;

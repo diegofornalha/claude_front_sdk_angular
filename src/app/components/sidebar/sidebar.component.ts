@@ -90,44 +90,86 @@ import { Session } from '../../../../projects/claude-front-sdk/src/lib/models/se
         }
       </button>
 
-      <!-- Recentes -->
-      @if (!isCollapsed() && recentChats().length > 0) {
-        <div class="recents-section">
-          <span class="recents-label">RECENTES</span>
-          @for (chat of recentChats(); track chat.id) {
-            <div class="recent-item-container" [class.menu-open]="activeRecentMenu() === chat.id">
-              <button class="recent-item" [routerLink]="['/chat', chat.id]">
-                <span class="recent-title">{{ chat.titulo }}</span>
-              </button>
-              <button class="recent-menu-btn" (click)="toggleRecentMenu(chat.id, $event)">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <circle cx="12" cy="5" r="2"/>
-                  <circle cx="12" cy="12" r="2"/>
-                  <circle cx="12" cy="19" r="2"/>
-                </svg>
-              </button>
-              @if (activeRecentMenu() === chat.id) {
-                <div class="recent-dropdown">
-                  <button class="dropdown-item" (click)="renameChat(chat.id)">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                    </svg>
-                    <span>Renomear</span>
-                  </button>
-                  <button class="dropdown-item delete" (click)="deleteChat(chat.id)">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polyline points="3 6 5 6 21 6"/>
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                    </svg>
-                    <span>Apagar</span>
-                  </button>
-                </div>
-              }
-            </div>
+      <!-- Favoritos (só aparece se tiver favoritos) -->
+      @if (!isCollapsed() && favoriteChats().length > 0) {
+        <div class="recents-section favorites-section">
+          <span class="recents-label">FAVORITOS</span>
+          @for (chat of favoriteChats(); track chat.id) {
+            <ng-container *ngTemplateOutlet="chatItem; context: { chat: chat }"></ng-container>
           }
         </div>
       }
+
+      <!-- Recentes (não favoritos) -->
+      @if (!isCollapsed()) {
+        <div class="recents-section">
+          <span class="recents-label">RECENTES</span>
+          @if (nonFavoriteChats().length === 0) {
+            <p class="empty-message">Seus chats aparecerão aqui</p>
+          }
+          @for (chat of nonFavoriteChats(); track chat.id) {
+            <ng-container *ngTemplateOutlet="chatItem; context: { chat: chat }"></ng-container>
+          }
+        </div>
+      }
+
+      <!-- Template reutilizável para item de chat -->
+      <ng-template #chatItem let-chat="chat">
+        <div class="recent-item-container" [class.menu-open]="activeRecentMenu() === chat.id">
+          <button class="recent-item" [routerLink]="['/chat', chat.id]">
+            @if (chat.favorite) {
+              <svg class="favorite-star" width="12" height="12" viewBox="0 0 24 24" fill="#d97706" stroke="#d97706">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            }
+            <span class="recent-title">{{ chat.titulo }}</span>
+          </button>
+          <button class="recent-menu-btn" (click)="toggleRecentMenu(chat.id, $event)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="12" cy="5" r="2"/>
+              <circle cx="12" cy="12" r="2"/>
+              <circle cx="12" cy="19" r="2"/>
+            </svg>
+          </button>
+          @if (activeRecentMenu() === chat.id) {
+            <div class="recent-dropdown">
+              <button class="dropdown-item" (click)="favoriteChat(chat.id)">
+                @if (chat.favorite) {
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="#d97706" stroke="#d97706" stroke-width="1.5">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                  <span>Desfavoritar</span>
+                } @else {
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                  <span>Favoritar</span>
+                }
+              </button>
+              <button class="dropdown-item" (click)="openRenameModal(chat.id, chat.titulo)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                </svg>
+                <span>Mudar o nome</span>
+              </button>
+              <button class="dropdown-item" (click)="addToProject(chat.id)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+                <span>Adicionar ao projeto</span>
+              </button>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item delete" (click)="deleteChat(chat.id)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+                <span>Apagar</span>
+              </button>
+            </div>
+          }
+        </div>
+      </ng-template>
 
       <!-- Spacer -->
       <div class="spacer"></div>
@@ -229,6 +271,38 @@ import { Session } from '../../../../projects/claude-front-sdk/src/lib/models/se
     }
     @if (activeRecentMenu()) {
       <div class="menu-overlay" (click)="closeRecentMenu()"></div>
+    }
+
+    <!-- Modal de Renomear -->
+    @if (isRenameModalOpen()) {
+      <div class="rename-modal-backdrop" (click)="closeRenameModal()">
+        <div class="rename-modal" (click)="$event.stopPropagation()">
+          <div class="rename-modal-header">
+            <h3>Renomear conversa</h3>
+            <button class="rename-modal-close" (click)="closeRenameModal()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+          <div class="rename-modal-body">
+            <input
+              type="text"
+              class="rename-input"
+              [value]="renameModalTitle()"
+              (input)="onRenameInputChange($event)"
+              (keydown)="onRenameKeydown($event)"
+              placeholder="Nome da conversa"
+              autofocus
+            />
+          </div>
+          <div class="rename-modal-footer">
+            <button class="rename-btn cancel" (click)="closeRenameModal()">Cancelar</button>
+            <button class="rename-btn confirm" (click)="confirmRename()">Salvar</button>
+          </div>
+        </div>
+      </div>
     }
   `,
   styles: [`
@@ -352,7 +426,7 @@ import { Session } from '../../../../projects/claude-front-sdk/src/lib/models/se
     .recent-item {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 6px;
       width: 100%;
       padding: 8px 12px;
       border: none;
@@ -363,6 +437,9 @@ import { Session } from '../../../../projects/claude-front-sdk/src/lib/models/se
       font-size: 13px;
       text-align: left;
       transition: all 0.15s ease;
+    }
+    .favorite-star {
+      flex-shrink: 0;
     }
     .recent-item:hover {
       background: #e8e7e2;
@@ -434,9 +511,10 @@ import { Session } from '../../../../projects/claude-front-sdk/src/lib/models/se
       border: 1px solid #e5e4df;
       border-radius: 8px;
       box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-      min-width: 140px;
+      min-width: 160px;
       padding: 4px;
       z-index: 9999;
+      pointer-events: auto;
     }
 
     .recent-dropdown .dropdown-item {
@@ -653,6 +731,133 @@ import { Session } from '../../../../projects/claude-front-sdk/src/lib/models/se
       inset: 0;
       z-index: 1000;
     }
+
+    /* Garantir que dropdown fique acima do overlay */
+    .recent-item-container.menu-open {
+      position: relative;
+      z-index: 1001;
+    }
+
+    /* Seção de Favoritos */
+    .favorites-section {
+      border-top: none;
+      margin-top: 8px;
+      padding-top: 8px;
+    }
+    .favorites-section .recents-label {
+      color: #d97706;
+    }
+
+    /* Mensagem vazia */
+    .empty-message {
+      font-size: 13px;
+      color: #9a9a9a;
+      padding: 12px;
+      text-align: center;
+      font-style: italic;
+    }
+
+    /* Modal de Renomear */
+    .rename-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+
+    .rename-modal {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      width: 400px;
+      max-width: 90vw;
+      overflow: hidden;
+    }
+
+    .rename-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid #e5e4df;
+    }
+    .rename-modal-header h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+
+    .rename-modal-close {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      color: #6b6b6b;
+    }
+    .rename-modal-close:hover {
+      background: #f5f4ef;
+    }
+
+    .rename-modal-body {
+      padding: 20px;
+    }
+
+    .rename-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #e5e4df;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1a1a1a;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    .rename-input:focus {
+      border-color: #da7756;
+    }
+
+    .rename-modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 16px 20px;
+      border-top: 1px solid #e5e4df;
+      background: #f9f9f7;
+    }
+
+    .rename-btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .rename-btn.cancel {
+      background: transparent;
+      border: 1px solid #e5e4df;
+      color: #6b6b6b;
+    }
+    .rename-btn.cancel:hover {
+      background: #f5f4ef;
+    }
+    .rename-btn.confirm {
+      background: #da7756;
+      border: none;
+      color: white;
+    }
+    .rename-btn.confirm:hover {
+      background: #c96a4b;
+    }
   `]
 })
 export class SidebarComponent implements OnInit {
@@ -673,9 +878,26 @@ export class SidebarComponent implements OnInit {
       .slice(0, 15)
       .map(s => ({
         id: s.session_id,
-        titulo: this.getSessionTitle(s)
+        titulo: this.getSessionTitle(s),
+        favorite: s.favorite || false,
+        projectId: s.project_id || null
       }));
   });
+
+  // Chats favoritos (separados)
+  favoriteChats = computed(() => {
+    return this.recentChats().filter(c => c.favorite);
+  });
+
+  // Chats não favoritos
+  nonFavoriteChats = computed(() => {
+    return this.recentChats().filter(c => !c.favorite);
+  });
+
+  // Estados do modal de renomear
+  isRenameModalOpen = signal(false);
+  renameModalChatId = signal<string | null>(null);
+  renameModalTitle = signal('');
 
   ngOnInit(): void {
     this.loadSessions();
@@ -764,6 +986,83 @@ export class SidebarComponent implements OnInit {
         console.error('Erro ao renomear chat:', error);
         alert('Erro ao renomear: ' + (error as Error).message);
       }
+    }
+    this.closeRecentMenu();
+  }
+
+  // Modal de renomear
+  openRenameModal(chatId: string, currentTitle: string): void {
+    this.renameModalChatId.set(chatId);
+    this.renameModalTitle.set(currentTitle);
+    this.isRenameModalOpen.set(true);
+    this.closeRecentMenu();
+  }
+
+  closeRenameModal(): void {
+    this.isRenameModalOpen.set(false);
+    this.renameModalChatId.set(null);
+    this.renameModalTitle.set('');
+  }
+
+  async confirmRename(): Promise<void> {
+    const chatId = this.renameModalChatId();
+    const newTitle = this.renameModalTitle().trim();
+
+    if (!chatId || !newTitle) {
+      this.closeRenameModal();
+      return;
+    }
+
+    try {
+      await this.sessionService.rename(chatId, newTitle);
+      await this.loadSessions();
+    } catch (error) {
+      console.error('Erro ao renomear chat:', error);
+    }
+    this.closeRenameModal();
+  }
+
+  onRenameInputChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.renameModalTitle.set(input.value);
+  }
+
+  onRenameKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter') {
+      this.confirmRename();
+    } else if (event.key === 'Escape') {
+      this.closeRenameModal();
+    }
+  }
+
+  async favoriteChat(chatId: string): Promise<void> {
+    console.log('[Sidebar] favoriteChat chamado:', chatId);
+    const chat = this.recentChats().find(c => c.id === chatId);
+    console.log('[Sidebar] chat encontrado:', chat);
+    const currentFavorite = chat?.favorite || false;
+    console.log('[Sidebar] currentFavorite:', currentFavorite, '-> novo:', !currentFavorite);
+
+    try {
+      await this.sessionService.setFavorite(chatId, !currentFavorite);
+      console.log('[Sidebar] setFavorite concluído');
+      await this.loadSessions();
+    } catch (error) {
+      console.error('Erro ao favoritar chat:', error);
+      alert('Erro ao favoritar: ' + (error as Error).message);
+    }
+    this.closeRecentMenu();
+  }
+
+  addToProject(chatId: string): void {
+    // Mostrar lista de projetos disponíveis
+    const projectName = prompt('Nome do projeto para adicionar este chat:');
+    if (projectName && projectName.trim()) {
+      this.sessionService.setProject(chatId, projectName.trim())
+        .then(() => this.loadSessions())
+        .catch(error => {
+          console.error('Erro ao adicionar ao projeto:', error);
+          alert('Erro ao adicionar ao projeto: ' + (error as Error).message);
+        });
     }
     this.closeRecentMenu();
   }
