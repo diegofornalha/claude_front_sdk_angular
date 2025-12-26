@@ -33,4 +33,6 @@ export interface StreamChunk {
   error?: string;
   done?: boolean;
   session_id?: string;
+  refresh_sessions?: boolean;  // Sinaliza que sidebar deve recarregar
+  command?: string;            // Comando executado (favorite, unfavorite, rename)
 }
