@@ -24,6 +24,9 @@ export class ChatService {
   currentSessionId = signal<string | null>(null);
   currentModel = signal<'haiku' | 'sonnet' | 'opus'>('opus');
 
+  // ANTI-DUPLICAÇÃO: Flag para prevenir reload durante transição /new → /chat
+  private skipNextLoad = signal(false);
+
   // Computed signal para histórico formatado
   chatHistory = computed(() => {
     return this.messages().map(msg => ({
@@ -143,6 +146,11 @@ export class ChatService {
               if (!this.currentSessionId()) {
                 await this.fetchCurrentSessionId();
               }
+
+              // ANTI-DUPLICAÇÃO: Ativar flag para pular próximo loadSession()
+              this.skipNextLoad.set(true);
+              console.log('[ChatService] Streaming finalizado - flag skipNextLoad ativada');
+
               return;
             }
 
@@ -250,10 +258,23 @@ export class ChatService {
     this.currentSessionId.set(sessionId);
     this.error.set(null);
 
-    // CORREÇÃO: Se já tem mensagens (streaming ativo), NUNCA recarregar
-    // Isso previne duplicação quando navega de /new → /chat/[id]
+    // CORREÇÃO ANTI-DUPLICAÇÃO:
+    // 1. Se streaming está ativo, NUNCA recarregar
+    if (this.isStreaming() && !forceReload) {
+      console.log('[ChatService] Streaming ativo - bloqueando reload');
+      return;
+    }
+
+    // 2. Se flag skipNextLoad ativa (streaming acabou de terminar), pular
+    if (this.skipNextLoad() && !forceReload) {
+      console.log('[ChatService] Pulando reload - acabou de fazer streaming');
+      this.skipNextLoad.set(false);
+      return;
+    }
+
+    // 3. Se já tem mensagens, não recarregar (fallback)
     if (hasExistingMessages && !forceReload) {
-      console.log('[ChatService] Mantendo mensagens do streaming ativo - evitando duplicação');
+      console.log('[ChatService] Mantendo mensagens existentes - evitando duplicação');
       return;
     }
 
