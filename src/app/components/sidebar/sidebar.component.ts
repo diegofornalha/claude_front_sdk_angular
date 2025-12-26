@@ -910,27 +910,12 @@ export class SidebarComponent implements OnInit {
   }
 
   async onNewChat(): Promise<void> {
-    // Chamar /reset para criar nova sessão no backend
-    // Isso garante que JSONL e DB usem o mesmo ID
-    try {
-      const resetResponse = await this.sessionService.reset();
-      // Limpar mensagens do chat para começar do zero
-      this.chatService.clear();
-      // Atualizar o session_id do ChatService com o novo ID
-      if (resetResponse.new_session_id) {
-        this.chatService.setSession(resetResponse.new_session_id);
-        console.log('[Sidebar] Nova sessão criada:', resetResponse.new_session_id);
-        // Navegar para a nova sessão (evita criar duplicada)
-        this.router.navigate(['/chat', resetResponse.new_session_id]);
-      } else {
-        // Fallback: navegar para /new se não obteve ID
-        this.router.navigate(['/new']);
-      }
-    } catch (error) {
-      console.error('[Sidebar] Erro ao resetar sessão:', error);
-      // Em caso de erro, navegar para /new
-      this.router.navigate(['/new']);
-    }
+    // NÃO criar sessão aqui - apenas limpar estado e navegar para /new
+    // A sessão será criada automaticamente quando o usuário enviar a primeira mensagem
+    // Isso evita criar sessões fantasmas/vazias
+    this.chatService.clear();
+    this.chatService.setSession(null);
+    this.router.navigate(['/new']);
     this.newChatRequested.emit();
   }
 
@@ -1067,8 +1052,18 @@ export class SidebarComponent implements OnInit {
 
   async deleteChat(chatId: string): Promise<void> {
     try {
+      // Verificar se está deletando a sessão atual
+      const isCurrentSession = this.chatService.currentSessionId() === chatId;
+
       await this.sessionService.delete(chatId);
       await this.loadSessions();
+
+      // Se deletou a sessão atual, redirecionar para /new
+      if (isCurrentSession) {
+        this.chatService.clear();
+        this.chatService.setSession(null);
+        this.router.navigate(['/new']);
+      }
     } catch (error) {
       console.error('Erro ao apagar chat:', error);
     }
