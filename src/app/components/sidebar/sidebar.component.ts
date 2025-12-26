@@ -1,6 +1,6 @@
 import { Component, signal, output, inject, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { SessionService } from '../../../../projects/claude-front-sdk/src/lib/services/session.service';
 import { ChatService } from '../../../../projects/claude-front-sdk/src/lib/services/chat.service';
 import { Session } from '../../../../projects/claude-front-sdk/src/lib/models/session.models';
@@ -20,7 +20,7 @@ import { Session } from '../../../../projects/claude-front-sdk/src/lib/models/se
       </button>
 
       <!-- New Chat - Destaque laranja -->
-      <button class="nav-item new-chat" routerLink="/new" routerLinkActive="active" (click)="onNewChat()">
+      <button class="nav-item new-chat" (click)="onNewChat()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="12" y1="5" x2="12" y2="19"/>
           <line x1="5" y1="12" x2="19" y2="12"/>
@@ -133,25 +133,7 @@ import { Session } from '../../../../projects/claude-front-sdk/src/lib/models/se
           </button>
           @if (activeRecentMenu() === chat.id) {
             <div class="recent-dropdown">
-              <button class="dropdown-item" (click)="favoriteChat(chat.id)">
-                @if (chat.favorite) {
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="#d97706" stroke="#d97706" stroke-width="1.5">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                  </svg>
-                  <span>Desfavoritar</span>
-                } @else {
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                  </svg>
-                  <span>Favoritar</span>
-                }
-              </button>
-              <button class="dropdown-item" (click)="openRenameModal(chat.id, chat.titulo)">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
-                </svg>
-                <span>Mudar o nome</span>
-              </button>
+              <!-- Favoritar e Renomear removidos - agora são feitos via chat -->
               <button class="dropdown-item" (click)="addToProject(chat.id)">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                   <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
@@ -863,6 +845,7 @@ import { Session } from '../../../../projects/claude-front-sdk/src/lib/models/se
 export class SidebarComponent implements OnInit {
   private sessionService = inject(SessionService);
   private chatService = inject(ChatService);
+  private router = inject(Router);
 
   isCollapsed = signal(false);
   isUserMenuOpen = signal(false);
@@ -937,9 +920,16 @@ export class SidebarComponent implements OnInit {
       if (resetResponse.new_session_id) {
         this.chatService.setSession(resetResponse.new_session_id);
         console.log('[Sidebar] Nova sessão criada:', resetResponse.new_session_id);
+        // Navegar para a nova sessão (evita criar duplicada)
+        this.router.navigate(['/chat', resetResponse.new_session_id]);
+      } else {
+        // Fallback: navegar para /new se não obteve ID
+        this.router.navigate(['/new']);
       }
     } catch (error) {
       console.error('[Sidebar] Erro ao resetar sessão:', error);
+      // Em caso de erro, navegar para /new
+      this.router.navigate(['/new']);
     }
     this.newChatRequested.emit();
   }
