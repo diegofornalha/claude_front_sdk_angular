@@ -15,7 +15,9 @@ export * from './services/chat.service';
 export * from './services/session.service';
 export * from './services/rag.service';
 export * from './services/toolcalls.service';
+export * from './services/outputs.service';
 
 // Components
 export * from './components/chat/chat.component';
 export * from './components/toolcalls-panel/toolcalls-panel.component';
+export * from './components/outputs-panel/outputs-panel.component';

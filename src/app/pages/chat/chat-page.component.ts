@@ -3,7 +3,10 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ChatComponent } from '../../../../projects/claude-front-sdk/src/lib/components/chat/chat.component';
 import { ArtifactsPanelComponent } from '../../../../projects/claude-front-sdk/src/lib/components/artifacts-panel/artifacts-panel.component';
+import { OutputsPanelComponent } from '../../../../projects/claude-front-sdk/src/lib/components/outputs-panel/outputs-panel.component';
 import { ChatService } from '../../../../projects/claude-front-sdk/src/lib/services/chat.service';
+import { OutputsService, OutputFile } from '../../../../projects/claude-front-sdk/src/lib/services/outputs.service';
+import { ConfigService } from '../../../../projects/claude-front-sdk/src/lib/services/config.service';
 
 interface ArtifactCategory {
   id: string;
@@ -15,27 +18,89 @@ interface ArtifactCategory {
 @Component({
   selector: 'app-chat-page',
   standalone: true,
-  imports: [CommonModule, ChatComponent, ArtifactsPanelComponent],
+  imports: [CommonModule, ChatComponent, ArtifactsPanelComponent, OutputsPanelComponent],
   template: `
-    <!-- Header modo anônimo -->
-    @if (isAnonymousMode()) {
-      <div class="anonymous-header">
-        <div class="anonymous-title">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2a9 9 0 0 0-9 9c0 3.03 1.53 5.82 4 7.47V22l3.5-2 3.5 2v-3.53c2.47-1.65 4-4.44 4-7.47a9 9 0 0 0-9-9zm-3 10c-.83 0-1.5-.67-1.5-1.5S8.17 9 9 9s1.5.67 1.5 1.5S9.83 12 9 12zm6 0c-.83 0-1.5-.67-1.5-1.5S14.17 9 15 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
-          </svg>
-          <span>Chat anônimo</span>
-        </div>
-        <button class="close-anonymous-btn" (click)="exitAnonymousMode()" title="Sair do modo anônimo">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-      </div>
-    }
+    <!-- Modo Fullpage Outputs/Artifacts -->
+    @if (isOutputsFullPage()) {
+      <div class="outputs-fullpage">
+        <header class="outputs-header">
+          <a class="back-link" (click)="exitOutputsFullPage()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            Voltar ao Chat
+          </a>
+          <h1>
+            Outputs
+            <span class="session-badge" [class.warning]="!currentSessionId()">
+              {{ currentSessionId() ? (currentSessionId() | slice:0:8) + '...' : 'Sem sessao' }}
+            </span>
+          </h1>
+          <button class="refresh-btn" (click)="refreshOutputs()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="23 4 23 10 17 10"/>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+            </svg>
+            Atualizar
+          </button>
+        </header>
 
-    <div class="chat-page" [class.panel-open]="isArtifactsPanelOpen()" [class.anonymous]="isAnonymousMode()">
+        <div class="outputs-content">
+          <div class="outputs-card">
+            <div class="card-header">
+              <h2>Arquivos da Sessao</h2>
+              <span class="files-count">{{ outputs.files().length }} arquivo{{ outputs.files().length !== 1 ? 's' : '' }}</span>
+            </div>
+            <ul class="file-list">
+              @if (outputs.isLoading()) {
+                <li class="loading-state">
+                  <div class="spinner"></div>
+                  Carregando...
+                </li>
+              } @else if (outputs.files().length === 0) {
+                <li class="empty-state">
+                  <span class="empty-icon">📁</span>
+                  Nenhum arquivo ainda
+                </li>
+              } @else {
+                @for (file of outputs.files(); track file.name) {
+                  <li class="file-item">
+                    <div class="file-icon">{{ outputs.getFileIcon(file.name) }}</div>
+                    <div class="file-info">
+                      <a class="file-name" [href]="getOutputFileUrl(file)" target="_blank">{{ file.name }}</a>
+                      <div class="file-meta">{{ outputs.formatSize(file.size) }} - {{ outputs.formatDate(file.modified) }}</div>
+                    </div>
+                    <div class="file-actions">
+                      <button class="action-btn" (click)="downloadFile(file)">Download</button>
+                      <button class="action-btn delete" (click)="deleteOutputFile(file)">Excluir</button>
+                    </div>
+                  </li>
+                }
+              }
+            </ul>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <!-- Header modo anônimo -->
+      @if (isAnonymousMode()) {
+        <div class="anonymous-header">
+          <div class="anonymous-title">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2a9 9 0 0 0-9 9c0 3.03 1.53 5.82 4 7.47V22l3.5-2 3.5 2v-3.53c2.47-1.65 4-4.44 4-7.47a9 9 0 0 0-9-9zm-3 10c-.83 0-1.5-.67-1.5-1.5S8.17 9 9 9s1.5.67 1.5 1.5S9.83 12 9 12zm6 0c-.83 0-1.5-.67-1.5-1.5S14.17 9 15 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+            </svg>
+            <span>Chat anônimo</span>
+          </div>
+          <button class="close-anonymous-btn" (click)="exitAnonymousMode()" title="Sair do modo anônimo">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      }
+
+      <div class="chat-page" [class.panel-open]="isArtifactsPanelOpen() || isOutputsPanelOpen()" [class.anonymous]="isAnonymousMode()">
       <div class="chat-section">
         <!-- Artifact Mode: Mostrar cards de categoria -->
         @if (isArtifactMode() && !hasMessages()) {
@@ -72,34 +137,277 @@ interface ArtifactCategory {
         />
       </div>
 
-      <!-- Botão flutuante: Artefatos (se houver) ou Modo Anônimo -->
-      @if (!isArtifactsPanelOpen()) {
-        @if (hasArtifacts()) {
-          <!-- Botão Artefatos -->
-          <button class="floating-btn artifacts-btn" (click)="toggleArtifactsPanel()" title="Abrir Artefatos">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="18" height="18" rx="2"/>
-              <line x1="15" y1="3" x2="15" y2="21"/>
-            </svg>
-            @if (artifactsCount() > 0) {
-              <span class="badge">{{ artifactsCount() }}</span>
-            }
-          </button>
-        } @else if (!isAnonymousMode()) {
-          <!-- Botão Modo Anônimo -->
-          <button class="floating-btn anonymous-btn" (click)="enterAnonymousMode()" title="Ativar chat anônimo">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2a9 9 0 0 0-9 9c0 3.03 1.53 5.82 4 7.47V22l3.5-2 3.5 2v-3.53c2.47-1.65 4-4.44 4-7.47a9 9 0 0 0-9-9zm-3 10c-.83 0-1.5-.67-1.5-1.5S8.17 9 9 9s1.5.67 1.5 1.5S9.83 12 9 12zm6 0c-.83 0-1.5-.67-1.5-1.5S14.17 9 15 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
-            </svg>
-          </button>
-        }
+      <!-- Painel de Outputs -->
+      <div class="outputs-section" [class.open]="isOutputsPanelOpen()">
+        <claude-outputs-panel
+          [isOpen]="isOutputsPanelOpen()"
+          [sessionId]="currentSessionId()"
+          (togglePanel)="toggleOutputsPanel()"
+        />
+      </div>
+
+      <!-- Botões flutuantes -->
+      @if (!isArtifactsPanelOpen() && !isOutputsPanelOpen()) {
+        <div class="floating-buttons">
+          <!-- Botão Outputs (sempre visível se tiver sessão) -->
+          @if (currentSessionId() && hasOutputFiles()) {
+            <button class="floating-btn outputs-btn" (click)="toggleOutputsPanel()" title="Ver arquivos gerados">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+              @if (outputsCount() > 0) {
+                <span class="badge">{{ outputsCount() }}</span>
+              }
+            </button>
+          }
+
+          <!-- Botão Artefatos (se houver) -->
+          @if (hasArtifacts()) {
+            <button class="floating-btn artifacts-btn" (click)="toggleArtifactsPanel()" title="Abrir Artefatos">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <line x1="15" y1="3" x2="15" y2="21"/>
+              </svg>
+              @if (artifactsCount() > 0) {
+                <span class="badge">{{ artifactsCount() }}</span>
+              }
+            </button>
+          }
+
+          <!-- Botão Modo Anônimo (se não tiver artefatos/outputs) -->
+          @if (!hasArtifacts() && !hasOutputFiles() && !isAnonymousMode()) {
+            <button class="floating-btn anonymous-btn" (click)="enterAnonymousMode()" title="Ativar chat anônimo">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2a9 9 0 0 0-9 9c0 3.03 1.53 5.82 4 7.47V22l3.5-2 3.5 2v-3.53c2.47-1.65 4-4.44 4-7.47a9 9 0 0 0-9-9zm-3 10c-.83 0-1.5-.67-1.5-1.5S8.17 9 9 9s1.5.67 1.5 1.5S9.83 12 9 12zm6 0c-.83 0-1.5-.67-1.5-1.5S14.17 9 15 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+              </svg>
+            </button>
+          }
+        </div>
       }
     </div>
+    }
   `,
   styles: [`
     :host {
       display: block;
       height: 100%;
+    }
+
+    /* Outputs Fullpage Mode */
+    .outputs-fullpage {
+      height: 100%;
+      background: #faf9f5;
+      display: flex;
+      flex-direction: column;
+      overflow: auto;
+    }
+
+    .outputs-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      border-bottom: 1px solid #e5e4df;
+      background: #fff;
+    }
+
+    .outputs-header h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #1a1a1a;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0;
+    }
+
+    .back-link {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #6b6b6b;
+      text-decoration: none;
+      font-size: 14px;
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    .back-link:hover {
+      color: #da7756;
+    }
+
+    .session-badge {
+      font-size: 12px;
+      padding: 4px 12px;
+      border-radius: 16px;
+      background: #22c55e;
+      color: white;
+      font-weight: 500;
+    }
+    .session-badge.warning {
+      background: #f59e0b;
+    }
+
+    .refresh-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: #da7756;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .refresh-btn:hover {
+      background: #c96a4b;
+    }
+
+    .outputs-content {
+      flex: 1;
+      padding: 24px;
+      max-width: 900px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .outputs-card {
+      background: #fff;
+      border: 1px solid #e5e4df;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      overflow: hidden;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid #e5e4df;
+      background: #f5f4ef;
+    }
+    .card-header h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+    .files-count {
+      font-size: 14px;
+      color: #6b6b6b;
+    }
+
+    .file-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid #e5e4df;
+      transition: background 0.15s;
+    }
+    .file-item:last-child {
+      border-bottom: none;
+    }
+    .file-item:hover {
+      background: #f5f4ef;
+    }
+
+    .file-icon {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #22c55e 0%, #da7756 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 16px;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    .file-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .file-name {
+      font-weight: 600;
+      color: #1a1a1a;
+      text-decoration: none;
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .file-name:hover {
+      color: #da7756;
+    }
+
+    .file-meta {
+      font-size: 12px;
+      color: #9a9a9a;
+      margin-top: 4px;
+    }
+
+    .file-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .action-btn {
+      background: #f5f4ef;
+      border: 1px solid #e5e4df;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      color: #6b6b6b;
+      transition: all 0.15s;
+    }
+    .action-btn:hover {
+      background: #e5e4df;
+      color: #1a1a1a;
+    }
+    .action-btn.delete:hover {
+      background: #dc2626;
+      color: white;
+      border-color: #dc2626;
+    }
+
+    .loading-state,
+    .empty-state {
+      padding: 48px 24px;
+      text-align: center;
+      color: #6b6b6b;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .spinner {
+      width: 24px;
+      height: 24px;
+      border: 3px solid #e5e4df;
+      border-top-color: #da7756;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .empty-icon {
+      font-size: 48px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
 
     /* Anonymous Header */
@@ -165,11 +473,13 @@ interface ArtifactCategory {
       min-width: 0;
     }
 
-    .artifacts-section {
+    .artifacts-section,
+    .outputs-section {
       overflow: hidden;
       display: none;
     }
-    .artifacts-section.open {
+    .artifacts-section.open,
+    .outputs-section.open {
       display: block;
     }
 
@@ -189,18 +499,21 @@ interface ArtifactCategory {
     }
 
     /* Botão Artefatos */
-    .artifacts-btn {
+    .artifacts-btn,
+    .outputs-btn {
       background: #fff;
       border: 1px solid #e5e4df;
       color: #6b6b6b;
       box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
-    .artifacts-btn:hover {
+    .artifacts-btn:hover,
+    .outputs-btn:hover {
       background: #f5f4ef;
       border-color: #d5d4cf;
       color: #3d3d3d;
     }
-    .artifacts-btn .badge {
+    .artifacts-btn .badge,
+    .outputs-btn .badge {
       position: absolute;
       top: -4px;
       right: -4px;
@@ -215,6 +528,22 @@ interface ArtifactCategory {
       align-items: center;
       justify-content: center;
       padding: 0 4px;
+    }
+
+    /* Floating buttons stack */
+    .floating-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: fixed;
+      right: 24px;
+      bottom: 100px;
+      z-index: 100;
+    }
+    .floating-buttons .floating-btn {
+      position: relative;
+      right: auto;
+      bottom: auto;
     }
 
     /* Botão Modo Anônimo */
@@ -336,12 +665,19 @@ export class ChatPageComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private chat = inject(ChatService);
+  outputs = inject(OutputsService);  // public para usar no template
+  private config = inject(ConfigService);
 
   isArtifactsPanelOpen = signal(false);
+  isOutputsPanelOpen = signal(false);
+  isOutputsFullPage = signal(false);  // Modo fullpage outputs (?artifact)
   isAnonymousMode = signal(false);
   isArtifactMode = signal(false);
   hasArtifacts = signal(false);
+  hasOutputFiles = signal(false);
   artifactsCount = signal(0);
+  outputsCount = signal(0);
+  currentSessionId = signal<string | undefined>(undefined);
   private isNewChat = false;
 
   artifactCategories = signal<ArtifactCategory[]>([
@@ -403,6 +739,22 @@ export class ChatPageComponent implements OnInit {
         this.router.navigate(['/chat', sessionId], { replaceUrl: true });
       }
     });
+
+    // Atualizar currentSessionId e carregar outputs quando sessão mudar
+    effect(() => {
+      const sessionId = this.chat.currentSessionId();
+      this.currentSessionId.set(sessionId ?? undefined);
+      if (sessionId) {
+        this.loadOutputFiles(sessionId);
+      }
+    });
+
+    // Atualizar contagem de outputs quando files mudar
+    effect(() => {
+      const files = this.outputs.files();
+      this.outputsCount.set(files.length);
+      this.hasOutputFiles.set(files.length > 0);
+    });
   }
 
   ngOnInit(): void {
@@ -420,8 +772,14 @@ export class ChatPageComponent implements OnInit {
     this.route.params.subscribe(async params => {
       const sessionId = params['sessionId'];
       if (sessionId) {
+        // Definir currentSessionId imediatamente da URL
+        this.currentSessionId.set(sessionId);
         await this.chat.loadSession(sessionId);
         this.isNewChat = false;
+        // Carregar outputs se em modo fullpage
+        if (this.isOutputsFullPage()) {
+          await this.loadOutputFiles(sessionId);
+        }
       }
     });
 
@@ -429,6 +787,12 @@ export class ChatPageComponent implements OnInit {
     this.route.queryParams.subscribe(params => {
       this.isAnonymousMode.set(params['incognito'] !== undefined);
       this.isArtifactMode.set(params['mode'] === 'artifact');
+      // Verificar se é modo fullpage outputs (?artifact)
+      this.isOutputsFullPage.set(params['artifact'] !== undefined);
+      // Carregar outputs se em modo fullpage
+      if (params['artifact'] !== undefined && this.currentSessionId()) {
+        this.loadOutputFiles(this.currentSessionId()!);
+      }
     });
   }
 
@@ -460,5 +824,59 @@ export class ChatPageComponent implements OnInit {
   addArtifact(): void {
     this.artifactsCount.update(c => c + 1);
     this.hasArtifacts.set(true);
+  }
+
+  toggleOutputsPanel(): void {
+    this.isOutputsPanelOpen.update(open => !open);
+    // Fechar painel de artefatos se abrir outputs
+    if (this.isOutputsPanelOpen()) {
+      this.isArtifactsPanelOpen.set(false);
+    }
+  }
+
+  async loadOutputFiles(sessionId: string): Promise<void> {
+    await this.outputs.list(sessionId);
+  }
+
+  // Métodos para modo fullpage outputs
+  exitOutputsFullPage(): void {
+    const sessionId = this.currentSessionId();
+    if (sessionId) {
+      this.router.navigate(['/chat', sessionId]);
+    } else {
+      this.router.navigate(['/new']);
+    }
+  }
+
+  async refreshOutputs(): Promise<void> {
+    const sessionId = this.currentSessionId();
+    if (sessionId) {
+      await this.outputs.list(sessionId);
+    }
+  }
+
+  getOutputFileUrl(file: OutputFile): string {
+    const sessionId = this.currentSessionId();
+    if (sessionId) {
+      return `${this.config.apiUrl}/outputs/${sessionId}/${file.name}`;
+    }
+    return this.outputs.getFileUrl(file);
+  }
+
+  downloadFile(file: OutputFile): void {
+    const url = this.getOutputFileUrl(file);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = file.name;
+    link.click();
+  }
+
+  async deleteOutputFile(file: OutputFile): Promise<void> {
+    if (confirm(`Excluir ${file.name}?`)) {
+      const sessionId = this.currentSessionId();
+      const path = sessionId ? `${sessionId}/${file.name}` : file.name;
+      await this.outputs.delete(path);
+      await this.refreshOutputs();
+    }
   }
 }
