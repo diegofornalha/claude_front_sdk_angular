@@ -239,11 +239,26 @@ export class ChatService {
 
   /**
    * Carrega sessão com histórico de mensagens do backend
+   * @param sessionId - ID da sessão
+   * @param forceReload - Se true, recarrega mesmo se já tiver mensagens
    */
-  async loadSession(sessionId: string): Promise<void> {
+  async loadSession(sessionId: string, forceReload: boolean = false): Promise<void> {
+    const previousSessionId = this.currentSessionId();
+    const isSameSession = previousSessionId === sessionId;
+    const hasExistingMessages = this.messages().length > 0;
+
     this.currentSessionId.set(sessionId);
-    this.messages.set([]);
     this.error.set(null);
+
+    // CORREÇÃO: Se já tem mensagens (streaming ativo), NUNCA recarregar
+    // Isso previne duplicação quando navega de /new → /chat/[id]
+    if (hasExistingMessages && !forceReload) {
+      console.log('[ChatService] Mantendo mensagens do streaming ativo - evitando duplicação');
+      return;
+    }
+
+    // Se mudou de sessão ou forceReload, limpa e recarrega
+    this.messages.set([]);
 
     try {
       const config = this.config.getConfig();
