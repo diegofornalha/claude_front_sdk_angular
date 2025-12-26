@@ -166,6 +166,14 @@ export class ChatService {
                 );
               }
 
+              // Se recebeu sinal para recarregar sessões (após comando de gerenciamento)
+              if (parsed.refresh_sessions) {
+                console.log('[ChatService] Recarregando sessões após comando:', parsed.command);
+                this.sessionService.list().catch(err =>
+                  console.error('[ChatService] Erro ao recarregar sessões:', err)
+                );
+              }
+
               if (parsed.error) {
                 throw new Error(parsed.error);
               }
