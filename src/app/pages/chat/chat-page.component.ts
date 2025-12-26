@@ -72,7 +72,7 @@ interface ArtifactCategory {
                     </div>
                     <div class="file-actions">
                       <button class="action-btn" (click)="downloadFile(file)">Download</button>
-                      <button class="action-btn delete" (click)="deleteOutputFile(file)">Excluir</button>
+                      <button class="action-btn delete" (click)="deleteOutputFile(file)">Apagar</button>
                     </div>
                   </li>
                 }
@@ -872,11 +872,9 @@ export class ChatPageComponent implements OnInit {
   }
 
   async deleteOutputFile(file: OutputFile): Promise<void> {
-    if (confirm(`Excluir ${file.name}?`)) {
-      const sessionId = this.currentSessionId();
-      const path = sessionId ? `${sessionId}/${file.name}` : file.name;
-      await this.outputs.delete(path);
-      await this.refreshOutputs();
-    }
+    const sessionId = this.currentSessionId();
+    const path = sessionId ? `${sessionId}/${file.name}` : file.name;
+    await this.outputs.delete(path);
+    await this.refreshOutputs();
   }
 }

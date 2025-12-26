@@ -130,7 +130,7 @@ export class OutputsService {
       await this.list();
       return true;
     } catch (err) {
-      console.error('[OutputsService] Erro ao deletar arquivo:', err);
+      console.error('[OutputsService] Erro ao apagar arquivo:', err);
       return false;
     }
   }

@@ -91,14 +91,14 @@ export class SessionService {
   }
 
   /**
-   * Deleta múltiplas sessões (mais eficiente que deletar uma por uma)
+   * Apaga múltiplas sessões (mais eficiente que apagar uma por uma)
    */
   async deleteBulk(sessionIds: string[]): Promise<void> {
     for (const id of sessionIds) {
       try {
         await this.delete(id, true);  // skip refresh
       } catch (error) {
-        console.error(`[SessionService] Erro ao deletar ${id}:`, error);
+        console.error(`[SessionService] Erro ao apagar ${id}:`, error);
       }
     }
     await this.list();  // refresh only once at the end

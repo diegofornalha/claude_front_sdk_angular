@@ -12,7 +12,6 @@ interface Conversa {
   ultimaMensagem: string;
   messageCount: number;
   model: string;
-  selected: boolean;
   isJsonl: boolean;  // true = JSONL, false = AgentFS DB
   file: string;      // Nome do arquivo original
   projectFolder: string;  // Pasta do projeto (extraída do file path)
@@ -71,10 +70,10 @@ interface Conversa {
         <!-- Conversations List -->
         <div class="conversas-list">
           @for (conversa of filteredConversas(); track conversa.uniqueId) {
-            <div class="conversa-item" [class.selected]="conversa.selected">
+            <div class="conversa-item" [class.selected]="isSelected(conversa.id)">
               @if (isSelectMode()) {
                 <label class="checkbox-container">
-                  <input type="checkbox" [(ngModel)]="conversa.selected" />
+                  <input type="checkbox" [checked]="isSelected(conversa.id)" (change)="toggleSelect(conversa.id)" />
                   <span class="checkmark"></span>
                 </label>
               }
@@ -120,7 +119,7 @@ interface Conversa {
                         <polyline points="3 6 5 6 21 6"/>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                       </svg>
-                      Excluir
+                      Apagar
                     </button>
                   </div>
                 }
@@ -163,7 +162,7 @@ interface Conversa {
                 <polyline points="3 6 5 6 21 6"/>
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
               </svg>
-              Excluir
+              Apagar
             </button>
           }
         </div>
@@ -611,10 +610,22 @@ export class ConversasPageComponent implements OnInit {
 
   searchQuery = '';
   isSelectMode = signal(false);
-  isLoading = signal(true);
   activeMenuId = signal<string | null>(null);
 
-  conversas = signal<Conversa[]>([]);
+  // Signal separado para IDs selecionados (permite seleção múltipla)
+  selectedIds = signal<Set<string>>(new Set());
+
+  // Usar computed baseado no sessionService para sincronizar com sidebar
+  conversas = computed(() => {
+    const sessions = this.sessionService.sessions();
+    const sortedSessions = sessions.slice().sort((a, b) => b.updated_at - a.updated_at);
+    return sortedSessions.map((session, index) =>
+      this.sessionToConversa(session, index === 0)
+    );
+  });
+
+  // Usar signal do service para loading
+  isLoading = computed(() => this.sessionService.isLoading());
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: Event): void {
@@ -630,19 +641,11 @@ export class ConversasPageComponent implements OnInit {
   }
 
   async loadSessions(): Promise<void> {
-    this.isLoading.set(true);
     try {
-      const sessions = await this.sessionService.list();
-      const sortedSessions = sessions.sort((a, b) => b.updated_at - a.updated_at);
-      const conversas = sortedSessions.map((session, index) =>
-        this.sessionToConversa(session, index === 0)
-      );
-      this.conversas.set(conversas);
+      // Apenas chama list() - o computed() atualiza automaticamente
+      await this.sessionService.list();
     } catch (error) {
       console.error('Erro ao carregar sessoes:', error);
-      this.conversas.set([]);
-    } finally {
-      this.isLoading.set(false);
     }
   }
 
@@ -660,7 +663,6 @@ export class ConversasPageComponent implements OnInit {
       ultimaMensagem: this.formatDate(session.updated_at),
       messageCount: session.message_count || 0,
       model: session.model || 'claude',
-      selected: false,
       isJsonl,
       file: session.file_name || session.file || '',
       projectFolder,
@@ -692,28 +694,44 @@ export class ConversasPageComponent implements OnInit {
     );
   }
 
-  selectedCount() {
-    return this.conversas().filter(c => c.selected).length;
+  isSelected(id: string): boolean {
+    return this.selectedIds().has(id);
+  }
+
+  toggleSelect(id: string): void {
+    this.selectedIds.update(ids => {
+      const newIds = new Set(ids);
+      if (newIds.has(id)) {
+        newIds.delete(id);
+      } else {
+        newIds.add(id);
+      }
+      return newIds;
+    });
+  }
+
+  selectedCount(): number {
+    return this.selectedIds().size;
   }
 
   isAllSelected(): boolean {
     const all = this.conversas();
-    return all.length > 0 && all.every(c => c.selected);
+    return all.length > 0 && all.every(c => this.selectedIds().has(c.id));
   }
 
   toggleSelectAll(): void {
     const allSelected = this.isAllSelected();
-    this.conversas.update(list =>
-      list.map(c => ({ ...c, selected: !allSelected }))
-    );
+    if (allSelected) {
+      this.selectedIds.set(new Set());
+    } else {
+      this.selectedIds.set(new Set(this.conversas().map(c => c.id)));
+    }
   }
 
   toggleSelectMode(): void {
     this.isSelectMode.update(v => !v);
     if (!this.isSelectMode()) {
-      this.conversas.update(list =>
-        list.map(c => ({ ...c, selected: false }))
-      );
+      this.selectedIds.set(new Set());
     }
   }
 
@@ -737,19 +755,17 @@ export class ConversasPageComponent implements OnInit {
       await this.sessionService.delete(id);
       await this.loadSessions();
     } catch (error) {
-      console.error('Erro ao deletar sessao:', id, error);
+      console.error('Erro ao apagar sessao:', id, error);
     }
   }
 
   async deleteSelected(): Promise<void> {
-    const selectedIds = this.conversas()
-      .filter(c => c.selected)
-      .map(c => c.id);
+    const ids = Array.from(this.selectedIds());
 
     // Usa deleteBulk para evitar múltiplos refreshes
-    await this.sessionService.deleteBulk(selectedIds);
+    await this.sessionService.deleteBulk(ids);
 
-    await this.loadSessions();
+    this.selectedIds.set(new Set());
     this.isSelectMode.set(false);
   }
 }

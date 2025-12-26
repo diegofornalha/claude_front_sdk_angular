@@ -9,6 +9,9 @@ import { Session } from '../../../../projects/claude-front-sdk/src/lib/models/se
   selector: 'app-sidebar',
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive],
+  host: {
+    '(document:click)': 'onDocumentClick($event)'
+  },
   template: `
     <aside class="sidebar" [class.collapsed]="isCollapsed()">
       <!-- Toggle sidebar -->
@@ -132,7 +135,7 @@ import { Session } from '../../../../projects/claude-front-sdk/src/lib/models/se
             </svg>
           </button>
           @if (activeRecentMenu() === chat.id) {
-            <div class="recent-dropdown">
+            <div class="recent-dropdown" (click)="$event.stopPropagation()">
               <!-- Favoritar e Renomear removidos - agora são feitos via chat -->
               <button class="dropdown-item" (click)="addToProject(chat.id)">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -141,7 +144,7 @@ import { Session } from '../../../../projects/claude-front-sdk/src/lib/models/se
                 <span>Adicionar ao projeto</span>
               </button>
               <div class="dropdown-divider"></div>
-              <button class="dropdown-item delete" (click)="deleteChat(chat.id)">
+              <button class="dropdown-item delete" (click)="deleteChat(chat.id); $event.stopPropagation()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                   <polyline points="3 6 5 6 21 6"/>
                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -250,9 +253,6 @@ import { Session } from '../../../../projects/claude-front-sdk/src/lib/models/se
     <!-- Overlay para fechar menu -->
     @if (isUserMenuOpen()) {
       <div class="menu-overlay" (click)="closeUserMenu()"></div>
-    }
-    @if (activeRecentMenu()) {
-      <div class="menu-overlay" (click)="closeRecentMenu()"></div>
     }
 
     <!-- Modal de Renomear -->
@@ -711,7 +711,7 @@ import { Session } from '../../../../projects/claude-front-sdk/src/lib/models/se
     .menu-overlay {
       position: fixed;
       inset: 0;
-      z-index: 1000;
+      z-index: 999;
     }
 
     /* Garantir que dropdown fique acima do overlay */
@@ -962,6 +962,14 @@ export class SidebarComponent implements OnInit {
     this.activeRecentMenu.set(null);
   }
 
+  onDocumentClick(event: Event): void {
+    const target = event.target as HTMLElement;
+    // Fecha o menu se clicar fora do dropdown e do botão de menu
+    if (!target.closest('.recent-dropdown') && !target.closest('.recent-menu-btn')) {
+      this.closeRecentMenu();
+    }
+  }
+
   async renameChat(chatId: string): Promise<void> {
     // Buscar o título atual
     const chat = this.recentChats().find(c => c.id === chatId);
@@ -1058,13 +1066,11 @@ export class SidebarComponent implements OnInit {
   }
 
   async deleteChat(chatId: string): Promise<void> {
-    if (confirm('Tem certeza que deseja apagar este chat?')) {
-      try {
-        await this.sessionService.delete(chatId);
-        await this.loadSessions();
-      } catch (error) {
-        console.error('Erro ao deletar chat:', error);
-      }
+    try {
+      await this.sessionService.delete(chatId);
+      await this.loadSessions();
+    } catch (error) {
+      console.error('Erro ao apagar chat:', error);
     }
     this.closeRecentMenu();
   }

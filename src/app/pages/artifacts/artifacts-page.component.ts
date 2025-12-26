@@ -510,11 +510,11 @@ export class ArtifactsPageComponent implements OnInit {
         // Recarregar lista de arquivos
         this.loadFiles();
       } else {
-        alert(`Erro ao excluir: ${result.error || 'Erro desconhecido'}`);
+        alert(`Erro ao apagar: ${result.error || 'Erro desconhecido'}`);
       }
     } catch (error) {
-      console.error('Erro ao excluir arquivo:', error);
-      alert('Erro ao excluir arquivo. Verifique o console para mais detalhes.');
+      console.error('Erro ao apagar arquivo:', error);
+      alert('Erro ao apagar arquivo. Verifique o console para mais detalhes.');
     }
   }
 }
