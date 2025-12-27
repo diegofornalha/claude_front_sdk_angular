@@ -1,4 +1,4 @@
-import { Component, signal, inject, OnInit, computed } from '@angular/core';
+import { Component, signal, inject, OnInit, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ConfigService } from '../../../../projects/claude-front-sdk/src/lib/services/config.service';
@@ -25,6 +25,7 @@ interface DocumentStats {
   selector: 'app-documents-page',
   standalone: true,
   imports: [CommonModule, RouterModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="documents-page">
       <div class="page-header">

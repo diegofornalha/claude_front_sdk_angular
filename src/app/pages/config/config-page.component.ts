@@ -1,4 +1,4 @@
-import { Component, signal, inject, OnInit } from '@angular/core';
+import { Component, signal, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ConfigService } from '../../../../projects/claude-front-sdk/src/lib/services/config.service';
@@ -30,6 +30,7 @@ interface DocumentStats {
   selector: 'app-config-page',
   standalone: true,
   imports: [CommonModule, RouterModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="config-page">
       <h1>Configuração RAG</h1>
@@ -888,9 +889,10 @@ export class ConfigPageComponent implements OnInit {
   }
 
   async deleteDatabase(): Promise<void> {
-    if (!confirm('Tem certeza que deseja apagar todo o banco RAG? Esta ação não pode ser desfeita.')) {
-      return;
-    }
+    // REMOVIDO: Popup de confirmação - apaga direto
+    // if (!confirm('Tem certeza que deseja apagar todo o banco RAG? Esta ação não pode ser desfeita.')) {
+    //   return;
+    // }
 
     this.isDeleting.set(true);
     this.actionOutput.set(null);
@@ -915,6 +917,7 @@ export class ConfigPageComponent implements OnInit {
       if (data.success) {
         this.actionOutput.set('✓ Banco RAG apagado com sucesso!');
         await this.loadConfig();
+        await this.loadDocumentStats();  // CORREÇÃO: Atualizar stats de documentos
       } else {
         this.actionError.set(true);
         this.actionOutput.set('✗ Erro ao apagar banco: ' + (data.detail || 'Falha desconhecida'));

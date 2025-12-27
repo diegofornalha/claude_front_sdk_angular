@@ -1,4 +1,4 @@
-import { Component, signal, output, inject, OnInit, computed } from '@angular/core';
+import { Component, signal, output, inject, OnInit, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { SessionService } from '../../../../projects/claude-front-sdk/src/lib/services/session.service';
@@ -9,6 +9,7 @@ import { Session } from '../../../../projects/claude-front-sdk/src/lib/models/se
   selector: 'app-sidebar',
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(document:click)': 'onDocumentClick($event)'
   },

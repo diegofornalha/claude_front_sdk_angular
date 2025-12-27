@@ -1,4 +1,4 @@
-import { Component, signal, inject, input, output, OnInit, effect } from '@angular/core';
+import { Component, signal, inject, input, output, OnInit, effect, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OutputsService, OutputFile } from '../../services/outputs.service';
 
@@ -6,6 +6,7 @@ import { OutputsService, OutputFile } from '../../services/outputs.service';
   selector: 'claude-outputs-panel',
   standalone: true,
   imports: [CommonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="outputs-panel" [class.open]="isOpen()">
       <!-- Header -->

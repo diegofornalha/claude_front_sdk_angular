@@ -1,4 +1,4 @@
-import { Component, signal, inject, OnInit, OnDestroy, effect } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy, effect, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
@@ -20,6 +20,7 @@ interface ArtifactCategory {
   selector: 'app-chat-page',
   standalone: true,
   imports: [CommonModule, ChatComponent, ArtifactsPanelComponent, OutputsPanelComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- Modo Fullpage Outputs/Artifacts -->
     @if (isOutputsFullPage()) {

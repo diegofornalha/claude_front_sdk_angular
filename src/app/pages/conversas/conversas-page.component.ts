@@ -1,4 +1,4 @@
-import { Component, signal, inject, OnInit, computed, HostListener } from '@angular/core';
+import { Component, signal, inject, OnInit, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -22,6 +22,10 @@ interface Conversa {
   selector: 'app-conversas-page',
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:click)': 'onDocumentClick($event)'
+  },
   template: `
     <div class="conversas-page">
       <!-- Header -->
@@ -627,7 +631,6 @@ export class ConversasPageComponent implements OnInit {
   // Usar signal do service para loading
   isLoading = computed(() => this.sessionService.isLoading());
 
-  @HostListener('document:click', ['$event'])
   onDocumentClick(event: Event): void {
     // Só fecha se clicar fora do menu
     const target = event.target as HTMLElement;

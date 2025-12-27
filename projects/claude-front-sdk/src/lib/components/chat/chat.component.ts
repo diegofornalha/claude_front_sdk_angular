@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ChatService } from '../../services/chat.service';
@@ -8,6 +8,7 @@ import { MarkdownPipe } from '../../pipes/markdown.pipe';
   selector: 'claude-chat',
   standalone: true,
   imports: [CommonModule, FormsModule, MarkdownPipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="claude-chat" [class.has-messages]="chat.messages().length > 0">
       <!-- Área de mensagens -->

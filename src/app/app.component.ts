@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
@@ -7,6 +7,7 @@ import { SidebarComponent } from './components/sidebar/sidebar.component';
   selector: 'app-root',
   standalone: true,
   imports: [CommonModule, RouterOutlet, SidebarComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="app-layout">
       <app-sidebar (newChatRequested)="onNewChat()" />

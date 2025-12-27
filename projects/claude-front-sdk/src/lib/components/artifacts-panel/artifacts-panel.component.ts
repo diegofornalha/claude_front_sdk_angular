@@ -1,4 +1,4 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, input, output, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface Artifact {
@@ -14,6 +14,7 @@ export interface Artifact {
   selector: 'claude-artifacts-panel',
   standalone: true,
   imports: [CommonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="artifacts-panel" [class.open]="isOpen()">
       <div class="panel-header">

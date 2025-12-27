@@ -1,4 +1,4 @@
-import { Component, signal, inject, OnInit } from '@angular/core';
+import { Component, signal, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ConfigService } from '../../../../projects/claude-front-sdk/src/lib/services/config.service';
@@ -15,6 +15,7 @@ interface OutputFile {
   selector: 'app-artifacts-page',
   standalone: true,
   imports: [CommonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="artifacts-page">
       <!-- Header -->

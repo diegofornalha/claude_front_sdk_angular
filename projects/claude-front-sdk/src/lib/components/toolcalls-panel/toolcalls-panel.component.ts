@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy, computed, input, output, signal, effect } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, computed, input, output, signal, effect, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ToolCallsService } from '../../services/toolcalls.service';
 import { ChatService } from '../../services/chat.service';
@@ -30,6 +30,7 @@ interface DebugData {
   selector: 'claude-toolcalls-panel',
   standalone: true,
   imports: [CommonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="toolcalls-panel">
       <div class="panel-header">

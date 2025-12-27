@@ -1,4 +1,4 @@
-import { Component, signal, inject } from '@angular/core';
+import { Component, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ConfigService } from '../../../../projects/claude-front-sdk/src/lib/services/config.service';
@@ -14,6 +14,7 @@ interface SearchResult {
   selector: 'app-search-page',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="search-page">
       <h1>Busca Semântica</h1>

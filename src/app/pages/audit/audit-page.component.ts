@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ToolCallsPanelComponent } from '../../../../projects/claude-front-sdk/src/lib/components/toolcalls-panel/toolcalls-panel.component';
@@ -7,6 +7,7 @@ import { ToolCallsPanelComponent } from '../../../../projects/claude-front-sdk/s
   selector: 'app-audit-page',
   standalone: true,
   imports: [CommonModule, ToolCallsPanelComponent, RouterLink],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="audit-page">
       @if (sessionId()) {
