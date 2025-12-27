@@ -5,6 +5,7 @@ import { provideRouter } from '@angular/router';
 import { AppComponent } from './app/app.component';
 import { provideClaude } from '../projects/claude-front-sdk/src/lib/services/config.service';
 import { routes } from './app/app.routes';
+import { environment } from './environments/environment';
 
 bootstrapApplication(AppComponent, {
   providers: [
@@ -12,10 +13,11 @@ bootstrapApplication(AppComponent, {
     provideHttpClient(),
     provideRouter(routes),
     provideClaude({
-      apiUrl: 'http://localhost:8001',
-      apiKey: 'rag_ol8q9wJtY4ERFjBdgFH2BKgCXqQl3qMqa8cWmuQXw1k',
-      streaming: true,
-      defaultModel: 'haiku'
-    })
-  ]
+      apiUrl: environment.apiUrl,
+      apiKey: environment.apiKey || undefined,
+      streaming: environment.streaming,
+      defaultModel: environment.defaultModel,
+      timeout: environment.timeout,
+    }),
+  ],
 }).catch(err => console.error(err));

@@ -1,5 +1,8 @@
 /**
  * Config Models - Configuração do SDK
+ *
+ * NOTA: apiUrl deve ser fornecido via provideClaude() usando environments.
+ * O valor padrão vazio força configuração explícita.
  */
 
 export interface ClaudeConfig {
@@ -12,9 +15,9 @@ export interface ClaudeConfig {
 }
 
 export const DEFAULT_CONFIG: ClaudeConfig = {
-  apiUrl: 'http://localhost:8001',
+  apiUrl: '', // Deve ser configurado via environment
   streaming: true,
   sessionPersistence: 'localStorage',
   defaultModel: 'haiku',
-  timeout: 30000
+  timeout: 30000,
 };

@@ -83,18 +83,37 @@ npm publish
 
 ## 🔧 Configuração
 
+### Environments (Recomendado)
 ```typescript
+// src/environments/environment.ts (dev)
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:8001',
+  apiKey: '',
+  defaultModel: 'haiku' as const,
+  streaming: true,
+};
+
+// src/environments/environment.prod.ts (prod)
+export const environment = {
+  production: true,
+  apiUrl: '/api',  // Proxy reverso
+  apiKey: '',      // Gerenciado via backend
+  ...
+};
+
 // main.ts
+import { environment } from './environments/environment';
 import { provideClaude } from 'claude-front-sdk-angular';
 
 bootstrapApplication(AppComponent, {
   providers: [
     provideHttpClient(),
     provideClaude({
-      apiUrl: 'http://localhost:8001',
-      apiKey: 'sua-chave-aqui',
-      streaming: true,
-      defaultModel: 'haiku'
+      apiUrl: environment.apiUrl,
+      apiKey: environment.apiKey || undefined,
+      streaming: environment.streaming,
+      defaultModel: environment.defaultModel,
     })
   ]
 });
@@ -162,10 +181,12 @@ export class AppComponent {}
 
 ## 📊 Performance
 
-- Bundle size: ~15kB (main.js)
+- Initial bundle: ~342kB (com lazy loading)
+- main.js: ~29kB
 - First load: <1s
 - Streaming latency: <100ms
 - Memory: Eficiente com Signals (sem zone.js overhead se zoneless)
+- Budget: 350kB warning, 500kB error
 
 ## 🛠️ Desenvolvimento
 
@@ -176,8 +197,14 @@ npm run watch
 # Testes
 npm test
 
-# Lint (ruff equivalent para Angular)
-npm run lint
+# Lint + Formatação
+npm run lint          # ESLint
+npm run lint:fix      # ESLint com auto-fix
+npm run format        # Prettier
+npm run format:check  # Verificar formatação
+
+# Pre-commit (via Husky + lint-staged)
+# Roda automaticamente: prettier --write + eslint --fix
 ```
 
 ## 📝 Licença

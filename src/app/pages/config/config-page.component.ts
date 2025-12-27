@@ -836,12 +836,17 @@ export class ConfigPageComponent implements OnInit {
     this.actionOutput.set(progressMessage);
     this.actionError.set(false);
 
+    // AbortController com timeout de 5 minutos (igual ao backend)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000);
+
     try {
       const response = await fetch(`${this.configService.apiUrl}${endpoint}`, {
         method: 'POST',
         headers: {
           'X-API-Key': this.configService.getConfig().apiKey || ''
-        }
+        },
+        signal: controller.signal
       });
 
       if (!response.ok) {
@@ -893,8 +898,13 @@ export class ConfigPageComponent implements OnInit {
       }
     } catch (err: any) {
       this.actionError.set(true);
-      this.actionOutput.set('✗ ERRO: ' + (err.message || 'Erro na reingestão'));
+      if (err.name === 'AbortError') {
+        this.actionOutput.set('✗ ERRO: Timeout após 5 minutos. O script pode ainda estar rodando no backend.');
+      } else {
+        this.actionOutput.set('✗ ERRO: ' + (err.message || 'Erro na reingestão'));
+      }
     } finally {
+      clearTimeout(timeoutId);
       this.isReingesting.set(false);
       this.currentAction.set(null);
     }
