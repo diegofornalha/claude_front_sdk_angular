@@ -652,7 +652,7 @@ export class ConversasPageComponent implements OnInit {
     }
   }
 
-  private sessionToConversa(session: Session, isFirst: boolean = false): Conversa {
+  private sessionToConversa(session: Session, isFirst = false): Conversa {
     const isJsonl = session.file_name?.endsWith('.jsonl') || session.file?.includes('.jsonl') || false;
 
     // Extrair pasta do projeto do file path

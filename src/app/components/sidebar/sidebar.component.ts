@@ -291,7 +291,7 @@ import { Session } from '../../../../projects/claude-front-sdk/src/lib/models/se
               (input)="onRenameInputChange($event)"
               (keydown)="onRenameKeydown($event)"
               placeholder="Nome da conversa"
-              autofocus
+             
             />
           </div>
           <div class="rename-modal-footer">

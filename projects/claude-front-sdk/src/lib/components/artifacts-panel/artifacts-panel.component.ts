@@ -315,9 +315,9 @@ export interface Artifact {
 })
 export class ArtifactsPanelComponent {
   isOpen = input<boolean>(true);
+  artifacts = input<Artifact[]>([]);
   togglePanel = output<void>();
 
-  artifacts = signal<Artifact[]>([]);
   selectedArtifact = signal<Artifact | null>(null);
 
   selectArtifact(artifact: Artifact): void {
@@ -334,10 +334,5 @@ export class ArtifactsPanelComponent {
       react: 'React Component'
     };
     return labels[type] || type;
-  }
-
-  addArtifact(artifact: Artifact): void {
-    this.artifacts.update(list => [...list, artifact]);
-    this.selectedArtifact.set(artifact);
   }
 }

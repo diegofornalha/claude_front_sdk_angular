@@ -38,10 +38,10 @@ const mockOutputsService = {
 const mockOutputsServiceWithFiles = {
   ...mockOutputsService,
   files: signal<OutputFile[]>([
-    { name: 'relatorio.pdf', size: 256000, modified: '2025-12-27T10:30:00Z' },
-    { name: 'dados.json', size: 4200, modified: '2025-12-27T11:15:00Z' },
-    { name: 'resumo.md', size: 1800, modified: '2025-12-27T12:00:00Z' },
-    { name: 'script.py', size: 3400, modified: '2025-12-27T14:20:00Z' },
+    { name: 'relatorio.pdf', size: 256000, modified: Date.now() - 3600000 },
+    { name: 'dados.json', size: 4200, modified: Date.now() - 7200000 },
+    { name: 'resumo.md', size: 1800, modified: Date.now() - 10800000 },
+    { name: 'script.py', size: 3400, modified: Date.now() - 14400000 },
   ]),
 };
 

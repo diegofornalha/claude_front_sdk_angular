@@ -20,7 +20,7 @@ export class RAGService {
   /**
    * Busca semântica
    */
-  async search(query: string, topK: number = 5): Promise<SearchResponse> {
+  async search(query: string, topK = 5): Promise<SearchResponse> {
     this.isSearching.set(true);
     try {
       const url = `${this.config.apiUrl}/rag/search`;

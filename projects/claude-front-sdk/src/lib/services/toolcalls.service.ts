@@ -39,7 +39,7 @@ export class ToolCallsService {
   /**
    * Busca tool calls recentes do backend
    */
-  async getRecent(limit: number = 10, sessionId?: string | null): Promise<ToolCall[]> {
+  async getRecent(limit = 10, sessionId?: string | null): Promise<ToolCall[]> {
     const sid = sessionId ?? this.currentSessionId;
     let url = `${this.config.apiUrl}/audit/tools?limit=${limit}`;
     if (sid) {
@@ -95,7 +95,7 @@ export class ToolCallsService {
   /**
    * Inicia polling para atualizar tool calls e stats em tempo real
    */
-  startPolling(intervalMs: number = 1000): void {
+  startPolling(intervalMs = 1000): void {
     if (this.isPolling()) return;
 
     this.isPolling.set(true);

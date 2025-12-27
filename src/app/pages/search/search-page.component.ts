@@ -31,7 +31,7 @@ interface SearchResult {
               name="query"
               placeholder="Digite sua pergunta ou termos de busca..."
               class="search-input"
-              autofocus
+             
             />
           </div>
           <div class="search-input-group top-k-group">

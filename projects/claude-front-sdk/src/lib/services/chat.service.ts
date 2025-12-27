@@ -121,7 +121,7 @@ export class ChatService {
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let assistantMessage = '';
-    let assistantMessageId = Date.now().toString();
+    const assistantMessageId = Date.now().toString();
 
     // Adiciona mensagem vazia do assistente
     this.messages.update(msgs => [...msgs, {
@@ -252,7 +252,7 @@ export class ChatService {
    * @param sessionId - ID da sessão
    * @param forceReload - Se true, recarrega mesmo se já tiver mensagens
    */
-  async loadSession(sessionId: string, forceReload: boolean = false): Promise<void> {
+  async loadSession(sessionId: string, forceReload = false): Promise<void> {
     const previousSessionId = this.currentSessionId();
     const isSameSession = previousSessionId === sessionId;
     const hasExistingMessages = this.messages().length > 0;
