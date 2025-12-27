@@ -1,0 +1,21 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["projects/claude-front-sdk/src/public-api.ts"],
+  "out": "docs/api",
+  "name": "Claude Front SDK Angular",
+  "readme": "README.md",
+  "includeVersion": true,
+  "categorizeByGroup": true,
+  "categoryOrder": ["Services", "Components", "Models", "Pipes", "*"],
+  "excludePrivate": true,
+  "excludeProtected": false,
+  "excludeInternal": true,
+  "hideGenerator": true,
+  "gitRevision": "main",
+  "plugin": [],
+  "theme": "default",
+  "navigation": {
+    "includeCategories": true,
+    "includeGroups": true
+  }
+}

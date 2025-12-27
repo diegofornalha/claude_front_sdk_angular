@@ -103,8 +103,10 @@ describe('ToolCallsService', () => {
   describe('getStats', () => {
     it('should fetch and update stats', fakeAsync(() => {
       const mockStats = {
+        session_id: 'session-123',
         total_calls: 100,
-        success_rate: 0.95,
+        errors: 5,
+        avg_duration_ms: 150,
         by_tool: { search: 50, read: 50 }
       };
 
@@ -135,9 +137,11 @@ describe('ToolCallsService', () => {
   describe('getDebug', () => {
     it('should fetch debug info for session', fakeAsync(() => {
       const mockDebug = {
+        found: true,
+        count: 2,
         session_id: 'session-123',
-        logs: ['log1', 'log2'],
-        events: []
+        summary: { total_events: 10, tool_events: 5, file_writes: 3, streams: 2 },
+        entries: []
       };
 
       service.getDebug('session-123').then(result => {
