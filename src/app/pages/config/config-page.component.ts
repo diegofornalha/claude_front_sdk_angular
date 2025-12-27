@@ -875,9 +875,21 @@ export class ConfigPageComponent implements OnInit {
         }
 
         await this.loadConfig();
+        await this.loadDocumentStats();
       } else {
         this.actionError.set(true);
-        this.actionOutput.set('✗ ERRO:\n' + (data.error || data.output || 'Falha desconhecida'));
+        // Build detailed error message
+        let errorMsg = '✗ ERRO: ';
+        if (data.error && data.error.trim()) {
+          errorMsg += data.error;
+        } else if (data.output && data.output.trim()) {
+          errorMsg += data.output;
+        } else if (data.returncode !== undefined && data.returncode !== 0) {
+          errorMsg += `Processo falhou (código ${data.returncode}).\n\nVerifique se o backend está configurado corretamente e se os scripts de ingestão existem.`;
+        } else {
+          errorMsg += 'Falha desconhecida';
+        }
+        this.actionOutput.set(errorMsg);
       }
     } catch (err: any) {
       this.actionError.set(true);
