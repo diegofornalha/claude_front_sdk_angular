@@ -13,7 +13,10 @@
     "test:lib:ci": "ng test claude-front-sdk --no-watch --code-coverage --browsers=ChromeHeadless",
     "test:coverage": "ng test claude-front-sdk --no-watch --code-coverage",
     "lint": "eslint . --ext .ts,.html",
-    "lint:fix": "eslint . --ext .ts,.html --fix"
+    "lint:fix": "eslint . --ext .ts,.html --fix",
+    "format": "prettier --write \"projects/**/*.{ts,html,scss,json}\" \"src/**/*.{ts,html,scss,json}\"",
+    "format:check": "prettier --check \"projects/**/*.{ts,html,scss,json}\" \"src/**/*.{ts,html,scss,json}\"",
+    "prepare": "husky"
   },
   "private": true,
   "dependencies": {
@@ -39,14 +42,27 @@
     "@types/jasmine": "~5.1.0",
     "angular-eslint": "^18.4.0",
     "eslint": "^9.17.0",
+    "husky": "^9.0.0",
     "jasmine-core": "~5.1.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "lint-staged": "^15.0.0",
     "ng-packagr": "^18.2.0",
+    "prettier": "^3.2.0",
     "typescript": "~5.5.2",
     "typescript-eslint": "^8.18.0"
+  },
+  "lint-staged": {
+    "projects/**/*.{ts,html}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "src/**/*.{ts,html}": [
+      "prettier --write",
+      "eslint --fix"
+    ]
   }
 }

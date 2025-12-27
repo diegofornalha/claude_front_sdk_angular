@@ -46,7 +46,7 @@ interface DebugData {
       <!-- Stats Cards -->
       <div class="stats-grid">
         <div class="stat-card">
-          <div class="stat-value">{{ stats()?.total_calls ?? 0 }}</div>
+          <div class="stat-value">{{ stats()?.total_calls ?? toolCallsFromDebug().length }}</div>
           <div class="stat-label">Chamadas</div>
         </div>
         <div class="stat-card">
@@ -82,7 +82,7 @@ interface DebugData {
 
       <!-- Tool Calls List -->
       <div class="toolcalls-list">
-        @if (toolCalls.recentToolCalls().length === 0) {
+        @if (toolCallsFromDebug().length === 0) {
           <div class="empty-state">
             <div class="empty-icon">
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -97,7 +97,7 @@ interface DebugData {
           </div>
         }
 
-        @for (tool of toolCalls.recentToolCalls(); track tool.id) {
+        @for (tool of toolCallsFromDebug(); track tool.id) {
           <div class="tool-item" [class.running]="tool.status === 'running'"
                                  [class.success]="tool.status === 'success'"
                                  [class.error]="tool.status === 'error'">
@@ -602,6 +602,33 @@ export class ToolCallsPanelComponent implements OnInit, OnDestroy {
     return data.entries.slice(-50).reverse();
   });
 
+  // Converter debug entries em ToolCalls para exibição quando /audit/tools está vazio
+  toolCallsFromDebug = computed(() => {
+    const debugData = this.debugData();
+    const existingToolCalls = this.toolCalls.recentToolCalls();
+
+    // Se já tem tool calls do AgentFS, usar elas
+    if (existingToolCalls.length > 0) {
+      return existingToolCalls;
+    }
+
+    // Senão, extrair do debug (entries com tool_name)
+    if (!debugData?.entries) return [];
+
+    const toolEntries = debugData.entries.filter(e => e.tool_name);
+    return toolEntries.map((e, index) => ({
+      id: index,
+      name: e.tool_name || 'unknown',
+      status: e.event_type === 'post_hook' ? 'success' as const : 'running' as const,
+      started_at: e.timestamp_ms / 1000 || Date.now() / 1000,
+      parameters: { message: e.message?.substring(0, 100) },
+      duration_ms: 0,
+      duration: 0,
+      error: undefined as string | undefined,
+      error_message: undefined as string | undefined
+    }));
+  });
+
   constructor() {
     // Effect que reage a mudanças no sessionId input
     effect(() => {
@@ -619,13 +646,30 @@ export class ToolCallsPanelComponent implements OnInit, OnDestroy {
 
   toolCount = computed(() => {
     const byTool = this.stats()?.by_tool;
-    return byTool ? Object.keys(byTool).length : 0;
+    if (byTool && Object.keys(byTool).length > 0) {
+      return Object.keys(byTool).length;
+    }
+    // Fallback: contar tools únicas do debug
+    const toolCalls = this.toolCallsFromDebug();
+    const uniqueTools = new Set(toolCalls.map(t => t.name));
+    return uniqueTools.size;
   });
 
   toolEntries = computed(() => {
     const byTool = this.stats()?.by_tool;
-    if (!byTool) return [];
-    return Object.entries(byTool)
+    if (byTool && Object.keys(byTool).length > 0) {
+      return Object.entries(byTool)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+    }
+    // Fallback: agregar do debug
+    const toolCalls = this.toolCallsFromDebug();
+    const countMap: Record<string, number> = {};
+    toolCalls.forEach(t => {
+      countMap[t.name] = (countMap[t.name] || 0) + 1;
+    });
+    return Object.entries(countMap)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
