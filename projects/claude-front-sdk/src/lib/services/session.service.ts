@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { Session, SessionInfo, SessionListResponse, ResetResponse } from '../models/session.models';
 import { ConfigService } from './config.service';
+import { LoggerService } from './logger.service';
 
 /**
  * SessionService - Gerencia sessões do Claude RAG
@@ -13,6 +14,7 @@ import { ConfigService } from './config.service';
 export class SessionService {
   private http = inject(HttpClient);
   private config = inject(ConfigService);
+  private logger = inject(LoggerService);
 
   currentSession = signal<SessionInfo | null>(null);
   sessions = signal<Session[]>([]);
@@ -35,13 +37,13 @@ export class SessionService {
     this.isLoading.set(true);
     try {
       const url = `${this.config.apiUrl}/sessions`;
-      console.log('[SessionService] Buscando sessões:', url);
+      this.logger.debug('SessionService', 'Buscando sessões:', url);
       const response = await firstValueFrom(this.http.get<SessionListResponse>(url));
-      console.log('[SessionService] Resposta:', response);
+      this.logger.debug('SessionService', 'Resposta:', response);
       this.sessions.set(response.sessions);
       return response.sessions;
     } catch (error) {
-      console.error('[SessionService] Erro ao buscar sessões:', error);
+      this.logger.error('SessionService', 'Erro ao buscar sessões:', error);
       throw error;
     } finally {
       this.isLoading.set(false);
@@ -98,7 +100,7 @@ export class SessionService {
       try {
         await this.delete(id, true);  // skip refresh
       } catch (error) {
-        console.error(`[SessionService] Erro ao apagar ${id}:`, error);
+        this.logger.error('SessionService', `Erro ao apagar ${id}:`, error);
       }
     }
     await this.list();  // refresh only once at the end

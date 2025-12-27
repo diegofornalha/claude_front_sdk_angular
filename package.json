@@ -8,7 +8,12 @@
     "build": "ng build",
     "build:lib": "ng build claude-front-sdk",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "test:lib": "ng test claude-front-sdk",
+    "test:lib:ci": "ng test claude-front-sdk --no-watch --code-coverage --browsers=ChromeHeadless",
+    "test:coverage": "ng test claude-front-sdk --no-watch --code-coverage",
+    "lint": "eslint . --ext .ts,.html",
+    "lint:fix": "eslint . --ext .ts,.html --fix"
   },
   "private": true,
   "dependencies": {
@@ -30,7 +35,10 @@
     "@angular-devkit/build-angular": "^18.2.0",
     "@angular/cli": "^18.2.0",
     "@angular/compiler-cli": "^18.2.0",
+    "@eslint/js": "^9.17.0",
     "@types/jasmine": "~5.1.0",
+    "angular-eslint": "^18.4.0",
+    "eslint": "^9.17.0",
     "jasmine-core": "~5.1.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
@@ -38,6 +46,7 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "ng-packagr": "^18.2.0",
-    "typescript": "~5.5.2"
+    "typescript": "~5.5.2",
+    "typescript-eslint": "^8.18.0"
   }
 }

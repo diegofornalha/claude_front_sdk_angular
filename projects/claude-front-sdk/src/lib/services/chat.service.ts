@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { ChatMessage, ChatRequest, StreamChunk } from '../models/chat.models';
 import { ConfigService } from './config.service';
 import { SessionService } from './session.service';
+import { LoggerService } from './logger.service';
 
 /**
  * ChatService - Gerencia chat com Claude usando Signals e SSE Streaming
@@ -15,6 +16,7 @@ export class ChatService {
   private http = inject(HttpClient);
   private config = inject(ConfigService);
   private sessionService = inject(SessionService);
+  private logger = inject(LoggerService);
 
   // Signals para estado reativo
   messages = signal<ChatMessage[]>([]);
@@ -63,12 +65,12 @@ export class ChatService {
       // Se era nova sessão, atualiza lista de sessões na sidebar
       if (isNewSession) {
         this.sessionService.list().catch(err =>
-          console.error('[ChatService] Erro ao atualizar sessões:', err)
+          this.logger.error('ChatService', 'Erro ao atualizar sessões:', err)
         );
       }
     } catch (err: any) {
       this.error.set(err.message || 'Erro ao processar mensagem');
-      console.error('[ChatService] Erro:', err);
+      this.logger.error('ChatService', 'Erro:', err);
     } finally {
       this.isStreaming.set(false);
     }
@@ -149,7 +151,7 @@ export class ChatService {
 
               // ANTI-DUPLICAÇÃO: Ativar flag para pular próximo loadSession()
               this.skipNextLoad.set(true);
-              console.log('[ChatService] Streaming finalizado - flag skipNextLoad ativada');
+              this.logger.debug('ChatService', 'Streaming finalizado - flag skipNextLoad ativada');
 
               return;
             }
@@ -177,9 +179,9 @@ export class ChatService {
 
               // Se recebeu sinal para recarregar sessões (após comando de gerenciamento)
               if (parsed.refresh_sessions) {
-                console.log('[ChatService] Recarregando sessões após comando:', parsed.command);
+                this.logger.debug('ChatService', 'Recarregando sessões após comando:', parsed.command);
                 this.sessionService.list().catch(err =>
-                  console.error('[ChatService] Erro ao recarregar sessões:', err)
+                  this.logger.error('ChatService', 'Erro ao recarregar sessões:', err)
                 );
               }
 
@@ -215,11 +217,11 @@ export class ChatService {
         const data = await response.json();
         if (data.session_id) {
           this.currentSessionId.set(data.session_id);
-          console.log('[ChatService] Session ID obtido do backend:', data.session_id);
+          this.logger.debug('ChatService', 'Session ID obtido do backend:', data.session_id);
         }
       }
     } catch (err) {
-      console.error('[ChatService] Erro ao buscar session_id:', err);
+      this.logger.error('ChatService', 'Erro ao buscar session_id:', err);
     }
   }
 
@@ -261,20 +263,20 @@ export class ChatService {
     // CORREÇÃO ANTI-DUPLICAÇÃO:
     // 1. Se streaming está ativo, NUNCA recarregar
     if (this.isStreaming() && !forceReload) {
-      console.log('[ChatService] Streaming ativo - bloqueando reload');
+      this.logger.debug('ChatService', 'Streaming ativo - bloqueando reload');
       return;
     }
 
     // 2. Se flag skipNextLoad ativa (streaming acabou de terminar), pular
     if (this.skipNextLoad() && !forceReload) {
-      console.log('[ChatService] Pulando reload - acabou de fazer streaming');
+      this.logger.debug('ChatService', 'Pulando reload - acabou de fazer streaming');
       this.skipNextLoad.set(false);
       return;
     }
 
     // 3. Se já tem mensagens, não recarregar (fallback)
     if (hasExistingMessages && !forceReload) {
-      console.log('[ChatService] Mantendo mensagens existentes - evitando duplicação');
+      this.logger.debug('ChatService', 'Mantendo mensagens existentes - evitando duplicação');
       return;
     }
 
@@ -321,7 +323,7 @@ export class ChatService {
 
       this.messages.set(loadedMessages);
     } catch (err: any) {
-      console.error('[ChatService] Erro ao carregar sessão:', err);
+      this.logger.error('ChatService', 'Erro ao carregar sessão:', err);
       this.error.set(err.message || 'Erro ao carregar histórico');
     }
   }

@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ToolCall, AuditStats, DebugResponse } from '../models/toolcalls.models';
 import { ConfigService } from './config.service';
+import { LoggerService } from './logger.service';
 
 /**
  * ToolCallsService - Rastreia tool calls do Claude em tempo real
@@ -14,6 +15,7 @@ import { ConfigService } from './config.service';
 export class ToolCallsService {
   private http = inject(HttpClient);
   private config = inject(ConfigService);
+  private logger = inject(LoggerService);
 
   // Signals para tool calls em tempo real
   recentToolCalls = signal<ToolCall[]>([]);
@@ -68,7 +70,7 @@ export class ToolCallsService {
       this.stats.set(response);
       return response;
     } catch (error) {
-      console.error('[ToolCallsService] Erro ao buscar stats:', error);
+      this.logger.error('ToolCallsService', 'Erro ao buscar stats:', error);
       return null;
     }
   }
@@ -85,7 +87,7 @@ export class ToolCallsService {
       this.debug.set(response);
       return response;
     } catch (error) {
-      console.error('[ToolCallsService] Erro ao buscar debug:', error);
+      this.logger.error('ToolCallsService', 'Erro ao buscar debug:', error);
       return null;
     }
   }
@@ -104,7 +106,7 @@ export class ToolCallsService {
           this.getStats()
         ]);
       } catch (error) {
-        console.error('[ToolCallsService] Erro no polling:', error);
+        this.logger.error('ToolCallsService', 'Erro no polling:', error);
       }
     }, intervalMs);
 

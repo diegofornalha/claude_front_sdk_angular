@@ -16,6 +16,10 @@ export * from './services/session.service';
 export * from './services/rag.service';
 export * from './services/toolcalls.service';
 export * from './services/outputs.service';
+export * from './services/logger.service';
+
+// Pipes
+export * from './pipes/markdown.pipe';
 
 // Components
 export * from './components/chat/chat.component';
