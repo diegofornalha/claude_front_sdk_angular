@@ -38,7 +38,7 @@ export interface FileContentResponse {
  * OutputsService - Gerencia arquivos de output/artefatos
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class OutputsService {
   private http = inject(HttpClient);
@@ -57,14 +57,12 @@ export class OutputsService {
     this.error.set(null);
 
     try {
-      let url = `${this.config.apiUrl}/outputs?directory=outputs`;
+      let url = `${this.config.apiUrl}/artifacts?directory=artifacts`;
       if (sessionId) {
         url += `&session_id=${sessionId}`;
       }
 
-      const response = await firstValueFrom(
-        this.http.get<OutputsResponse>(url)
-      );
+      const response = await firstValueFrom(this.http.get<OutputsResponse>(url));
 
       const files = response.files || [];
       this.files.set(files);
@@ -85,10 +83,8 @@ export class OutputsService {
    */
   async readFile(filename: string): Promise<string | null> {
     try {
-      const url = `${this.config.apiUrl}/outputs/file/${filename}`;
-      const response = await firstValueFrom(
-        this.http.get<FileContentResponse>(url)
-      );
+      const url = `${this.config.apiUrl}/artifacts/file/${filename}`;
+      const response = await firstValueFrom(this.http.get<FileContentResponse>(url));
       return response.content;
     } catch (err) {
       console.error('[OutputsService] Erro ao ler arquivo:', err);
@@ -104,7 +100,7 @@ export class OutputsService {
   getFileUrl(file: OutputFile | string, sessionId?: string): string {
     const filename = typeof file === 'string' ? file : file.name;
     const path = sessionId ? `${sessionId}/${filename}` : filename;
-    return `${this.config.apiUrl}/outputs/file/${path}`;
+    return `${this.config.apiUrl}/artifacts/file/${path}`;
   }
 
   /**
@@ -115,7 +111,7 @@ export class OutputsService {
   getViewerUrl(file: OutputFile | string, sessionId: string): string {
     const filename = typeof file === 'string' ? file : file.name;
     // Usa o servidor estático em :3000 para servir arquivos HTML
-    return `http://localhost:3000/backend/outputs/${sessionId}/${filename}`;
+    return `http://localhost:3000/backend/artifacts/${sessionId}/${filename}`;
   }
 
   /**
@@ -124,7 +120,7 @@ export class OutputsService {
    */
   async delete(filename: string): Promise<boolean> {
     try {
-      const url = `${this.config.apiUrl}/outputs/${filename}`;
+      const url = `${this.config.apiUrl}/artifacts/${filename}`;
       await firstValueFrom(this.http.delete(url));
       // Recarrega a lista
       await this.list();
@@ -142,10 +138,10 @@ export class OutputsService {
    */
   async writeFile(filename: string, content: string): Promise<boolean> {
     try {
-      const url = `${this.config.apiUrl}/outputs/write`;
+      const url = `${this.config.apiUrl}/artifacts/write`;
       await firstValueFrom(
         this.http.post(url, null, {
-          params: { filename, content, directory: '/outputs' }
+          params: { filename, content, directory: '/artifacts' },
         })
       );
       return true;
@@ -172,7 +168,7 @@ export class OutputsService {
       day: '2-digit',
       month: '2-digit',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   }
 
@@ -182,10 +178,22 @@ export class OutputsService {
   getFileIcon(name: string): string {
     const ext = name.split('.').pop()?.toLowerCase() || '';
     const icons: Record<string, string> = {
-      'txt': '📄', 'md': '📝', 'py': '🐍', 'js': '📜', 'ts': '📘',
-      'json': '📋', 'html': '🌐', 'css': '🎨', 'png': '🖼️',
-      'jpg': '🖼️', 'jpeg': '🖼️', 'pdf': '📕', 'csv': '📊',
-      'xml': '📰', 'yaml': '⚙️', 'yml': '⚙️'
+      txt: '📄',
+      md: '📝',
+      py: '🐍',
+      js: '📜',
+      ts: '📘',
+      json: '📋',
+      html: '🌐',
+      css: '🎨',
+      png: '🖼️',
+      jpg: '🖼️',
+      jpeg: '🖼️',
+      pdf: '📕',
+      csv: '📊',
+      xml: '📰',
+      yaml: '⚙️',
+      yml: '⚙️',
     };
     return icons[ext] || '📄';
   }

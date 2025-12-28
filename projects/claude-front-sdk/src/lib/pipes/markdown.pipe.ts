@@ -3,7 +3,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Pipe({
   name: 'markdown',
-  standalone: true
+  standalone: true,
 })
 export class MarkdownPipe implements PipeTransform {
   constructor(private sanitizer: DomSanitizer) {}
@@ -34,6 +34,17 @@ export class MarkdownPipe implements PipeTransform {
     // Unordered lists (- item or * item)
     html = html.replace(/^[-*] (.+)$/gm, '<li>$1</li>');
     html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+
+    // Links [text](url) - internal links get special class for Angular router
+    html = html.replace(
+      /\[([^\]]+)\]\(\/([^)]+)\)/g,
+      '<a href="/$2" class="internal-link" data-route="/$2">$1</a>'
+    );
+    // External links
+    html = html.replace(
+      /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener">$1</a>'
+    );
 
     // Checkboxes
     html = html.replace(/\[x\]/gi, '<span class="checkbox checked">&#10003;</span>');
