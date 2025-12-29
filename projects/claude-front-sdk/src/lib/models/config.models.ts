@@ -8,6 +8,7 @@
 export interface ClaudeConfig {
   apiUrl: string;
   apiKey?: string;
+  apiVersion?: 'v1' | 'legacy';
   streaming?: boolean;
   sessionPersistence?: 'localStorage' | 'sessionStorage' | 'none';
   defaultModel?: 'haiku' | 'sonnet' | 'opus';
@@ -16,6 +17,7 @@ export interface ClaudeConfig {
 
 export const DEFAULT_CONFIG: ClaudeConfig = {
   apiUrl: '', // Deve ser configurado via environment
+  apiVersion: 'v1', // Usar API versionada por padrão
   streaming: true,
   sessionPersistence: 'localStorage',
   defaultModel: 'haiku',

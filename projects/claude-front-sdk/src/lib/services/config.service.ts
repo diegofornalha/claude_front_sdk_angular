@@ -10,7 +10,7 @@ export const CLAUDE_CONFIG = new InjectionToken<Partial<ClaudeConfig>>('claude.c
  * ConfigService - Gerencia configuração do SDK
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ConfigService {
   private configToken = inject(CLAUDE_CONFIG, { optional: true });
@@ -19,7 +19,7 @@ export class ConfigService {
   constructor() {
     this.config = {
       ...DEFAULT_CONFIG,
-      ...(this.configToken || {})
+      ...(this.configToken || {}),
     };
   }
 
@@ -38,6 +38,29 @@ export class ConfigService {
   get apiKey(): string | undefined {
     return this.config.apiKey;
   }
+
+  get apiVersion(): string {
+    return this.config.apiVersion || 'v1';
+  }
+
+  /**
+   * Retorna a URL base com prefixo de versão
+   * Exemplo: http://localhost:8001/v1
+   */
+  getBaseUrl(): string {
+    const base = this.config.apiUrl.replace(/\/$/, ''); // Remove trailing slash
+    const version = this.config.apiVersion;
+    return version === 'legacy' ? base : `${base}/${version}`;
+  }
+
+  /**
+   * Constrói URL completa para um endpoint
+   * Exemplo: buildUrl('/sessions') => http://localhost:8001/v1/sessions
+   */
+  buildUrl(endpoint: string): string {
+    const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    return `${this.getBaseUrl()}${path}`;
+  }
 }
 
 /**
@@ -46,6 +69,6 @@ export class ConfigService {
 export function provideClaude(config: Partial<ClaudeConfig>) {
   return {
     provide: CLAUDE_CONFIG,
-    useValue: config
+    useValue: config,
   };
 }

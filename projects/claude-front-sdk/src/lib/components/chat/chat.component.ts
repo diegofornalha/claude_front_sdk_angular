@@ -1,4 +1,13 @@
-import { Component, inject, signal, ChangeDetectionStrategy, HostListener } from '@angular/core';
+import {
+  Component,
+  inject,
+  signal,
+  ChangeDetectionStrategy,
+  HostListener,
+  ViewChild,
+  ElementRef,
+  AfterViewInit,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -18,7 +27,50 @@ import { MarkdownPipe } from '../../pipes/markdown.pipe';
           @if (msg.role === 'user') {
             <!-- Mensagem do usuário à direita -->
             <div class="user-message-row">
-              <div class="user-bubble">{{ msg.content }}</div>
+              <div class="user-message-container">
+                <div class="user-bubble">{{ msg.content }}</div>
+                <div class="user-message-actions">
+                  <span class="message-time">{{ formatTime(msg.timestamp) }}</span>
+                  <button class="action-btn" title="Tentar novamente" (click)="retryMessage(msg)">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M23 4v6h-6" />
+                      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                    </svg>
+                  </button>
+                  <button class="action-btn" title="Editar" (click)="editMessage(msg)">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                    </svg>
+                  </button>
+                  <button class="action-btn" title="Copiar" (click)="copyMessage(msg.content)">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
             </div>
           } @else {
             <!-- Resposta do Claude à esquerda -->
@@ -132,7 +184,6 @@ import { MarkdownPipe } from '../../pipes/markdown.pipe';
             #inputTextarea
             [(ngModel)]="inputValue"
             (keydown.enter)="onEnter($event)"
-            [disabled]="chat.isStreaming()"
             [placeholder]="
               chat.messages().length === 0 ? 'Como posso ajudar você hoje?' : 'Enviar mensagem...'
             "
@@ -432,14 +483,39 @@ import { MarkdownPipe } from '../../pipes/markdown.pipe';
         justify-content: flex-end;
         padding: 8px 0;
       }
+      .user-message-container {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        max-width: 70%;
+      }
+
       .user-bubble {
         background: #f5f0e8;
         color: #1a1a1a;
         padding: 12px 16px;
         border-radius: 18px;
-        max-width: 70%;
         font-size: 15px;
         line-height: 1.5;
+      }
+
+      .user-message-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+
+      .user-message-row:hover .user-message-actions {
+        opacity: 1;
+      }
+
+      .message-time {
+        font-size: 12px;
+        color: #9a9a9a;
+        margin-right: 4px;
       }
 
       /* Resposta do Claude - à esquerda sem balão */
@@ -921,9 +997,17 @@ import { MarkdownPipe } from '../../pipes/markdown.pipe';
     `,
   ],
 })
-export class ChatComponent {
+export class ChatComponent implements AfterViewInit {
   chat = inject(ChatService);
   private router = inject(Router);
+
+  // Referência ao textarea para focar programaticamente
+  @ViewChild('inputTextarea') inputTextarea!: ElementRef<HTMLTextAreaElement>;
+
+  ngAfterViewInit(): void {
+    // Foca no textarea ao carregar o componente
+    this.focusInput();
+  }
 
   // Intercepta cliques em links internos para usar Angular Router
   @HostListener('click', ['$event'])
@@ -978,7 +1062,20 @@ export class ChatComponent {
   send(): void {
     if (this.inputValue.trim()) {
       this.chat.send();
+      // Foca no textarea após enviar para permitir digitar imediatamente
+      this.focusInput();
     }
+  }
+
+  focusInput(): void {
+    // Usa requestAnimationFrame + setTimeout para garantir que o DOM está atualizado
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        if (this.inputTextarea?.nativeElement) {
+          this.inputTextarea.nativeElement.focus();
+        }
+      }, 50);
+    });
   }
 
   onEnter(event: Event): void {
@@ -1038,5 +1135,33 @@ export class ChatComponent {
       .catch(err => {
         console.error('Erro ao copiar:', err);
       });
+  }
+
+  formatTime(timestamp?: Date | string | number): string {
+    if (!timestamp) return '';
+    const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+    return new Intl.DateTimeFormat('pt-BR', {
+      day: 'numeric',
+      month: 'short',
+    })
+      .format(date)
+      .replace('.', '');
+  }
+
+  retryMessage(msg: { content: string }): void {
+    this.inputValue = msg.content;
+    this.send();
+  }
+
+  editMessage(msg: { content: string }): void {
+    this.inputValue = msg.content;
+    // Focar no textarea após preencher
+    setTimeout(() => {
+      const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+      if (textarea) {
+        textarea.focus();
+        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+      }
+    }, 0);
   }
 }

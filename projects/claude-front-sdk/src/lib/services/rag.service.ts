@@ -1,14 +1,19 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { SearchRequest, SearchResponse, Document, DocumentListResponse } from '../models/rag.models';
+import {
+  SearchRequest,
+  SearchResponse,
+  Document,
+  DocumentListResponse,
+} from '../models/rag.models';
 import { ConfigService } from './config.service';
 
 /**
  * RAGService - Gerencia busca e documentos RAG
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class RAGService {
   private http = inject(HttpClient);
@@ -23,7 +28,7 @@ export class RAGService {
   async search(query: string, topK = 5): Promise<SearchResponse> {
     this.isSearching.set(true);
     try {
-      const url = `${this.config.apiUrl}/rag/search`;
+      const url = this.config.buildUrl('/rag/search');
       const request: SearchRequest = { query, top_k: topK };
       return await firstValueFrom(this.http.post<SearchResponse>(url, request));
     } finally {
@@ -35,7 +40,7 @@ export class RAGService {
    * Lista documentos
    */
   async listDocuments(): Promise<Document[]> {
-    const url = `${this.config.apiUrl}/rag/documents`;
+    const url = this.config.buildUrl('/rag/documents');
     const response = await firstValueFrom(this.http.get<DocumentListResponse>(url));
     this.documents.set(response.documents);
     return response.documents;
@@ -45,7 +50,7 @@ export class RAGService {
    * Deleta documento
    */
   async deleteDocument(docId: string): Promise<void> {
-    const url = `${this.config.apiUrl}/rag/documents/${docId}`;
+    const url = this.config.buildUrl(`/rag/documents/${docId}`);
     await firstValueFrom(this.http.delete(url));
     await this.listDocuments();
   }

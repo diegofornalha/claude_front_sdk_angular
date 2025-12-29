@@ -57,7 +57,7 @@ export class OutputsService {
     this.error.set(null);
 
     try {
-      let url = `${this.config.apiUrl}/artifacts?directory=artifacts`;
+      let url = this.config.buildUrl('/artifacts?directory=artifacts');
       if (sessionId) {
         url += `&session_id=${sessionId}`;
       }
@@ -83,7 +83,7 @@ export class OutputsService {
    */
   async readFile(filename: string): Promise<string | null> {
     try {
-      const url = `${this.config.apiUrl}/artifacts/file/${filename}`;
+      const url = this.config.buildUrl(`/artifacts/file/${filename}`);
       const response = await firstValueFrom(this.http.get<FileContentResponse>(url));
       return response.content;
     } catch (err) {
@@ -100,7 +100,7 @@ export class OutputsService {
   getFileUrl(file: OutputFile | string, sessionId?: string): string {
     const filename = typeof file === 'string' ? file : file.name;
     const path = sessionId ? `${sessionId}/${filename}` : filename;
-    return `${this.config.apiUrl}/artifacts/file/${path}`;
+    return this.config.buildUrl(`/artifacts/file/${path}`);
   }
 
   /**
@@ -120,7 +120,7 @@ export class OutputsService {
    */
   async delete(filename: string): Promise<boolean> {
     try {
-      const url = `${this.config.apiUrl}/artifacts/${filename}`;
+      const url = this.config.buildUrl(`/artifacts/${filename}`);
       await firstValueFrom(this.http.delete(url));
       // Recarrega a lista
       await this.list();
@@ -138,7 +138,7 @@ export class OutputsService {
    */
   async writeFile(filename: string, content: string): Promise<boolean> {
     try {
-      const url = `${this.config.apiUrl}/artifacts/write`;
+      const url = this.config.buildUrl('/artifacts/write');
       await firstValueFrom(
         this.http.post(url, null, {
           params: { filename, content, directory: '/artifacts' },

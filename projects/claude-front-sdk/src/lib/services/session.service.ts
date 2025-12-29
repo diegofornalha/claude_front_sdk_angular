@@ -9,7 +9,7 @@ import { LoggerService } from './logger.service';
  * SessionService - Gerencia sessões do Claude RAG
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class SessionService {
   private http = inject(HttpClient);
@@ -24,7 +24,7 @@ export class SessionService {
    * Obtém sessão atual
    */
   async getCurrent(): Promise<SessionInfo> {
-    const url = `${this.config.apiUrl}/session/current`;
+    const url = this.config.buildUrl('/session/current');
     const session = await firstValueFrom(this.http.get<SessionInfo>(url));
     this.currentSession.set(session);
     return session;
@@ -36,7 +36,7 @@ export class SessionService {
   async list(): Promise<Session[]> {
     this.isLoading.set(true);
     try {
-      const url = `${this.config.apiUrl}/sessions`;
+      const url = this.config.buildUrl('/sessions');
       this.logger.debug('SessionService', 'Buscando sessões:', url);
       const response = await firstValueFrom(this.http.get<SessionListResponse>(url));
       this.logger.debug('SessionService', 'Resposta:', response);
@@ -55,11 +55,11 @@ export class SessionService {
    */
   async reset(): Promise<ResetResponse> {
     const config = this.config.getConfig();
-    const url = `${config.apiUrl}/reset`;
+    const url = this.config.buildUrl('/reset');
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'X-Client-Project': 'chat-angular'
+      'X-Client-Project': 'chat-angular',
     };
 
     if (config.apiKey) {
@@ -69,7 +69,7 @@ export class SessionService {
     const response = await fetch(url, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ project: 'chat-angular' })
+      body: JSON.stringify({ project: 'chat-angular' }),
     });
 
     if (!response.ok) {
@@ -85,7 +85,7 @@ export class SessionService {
    * Deleta sessão
    */
   async delete(sessionId: string, skipRefresh = false): Promise<void> {
-    const url = `${this.config.apiUrl}/sessions/${sessionId}`;
+    const url = this.config.buildUrl(`/sessions/${sessionId}`);
     await firstValueFrom(this.http.delete(url));
     if (!skipRefresh) {
       await this.list();
@@ -98,12 +98,12 @@ export class SessionService {
   async deleteBulk(sessionIds: string[]): Promise<void> {
     for (const id of sessionIds) {
       try {
-        await this.delete(id, true);  // skip refresh
+        await this.delete(id, true); // skip refresh
       } catch (error) {
         this.logger.error('SessionService', `Erro ao apagar ${id}:`, error);
       }
     }
-    await this.list();  // refresh only once at the end
+    await this.list(); // refresh only once at the end
   }
 
   /**
@@ -111,10 +111,10 @@ export class SessionService {
    */
   async rename(sessionId: string, title: string): Promise<void> {
     const config = this.config.getConfig();
-    const url = `${config.apiUrl}/sessions/${sessionId}`;
+    const url = this.config.buildUrl(`/sessions/${sessionId}`);
 
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     };
 
     if (config.apiKey) {
@@ -124,7 +124,7 @@ export class SessionService {
     const response = await fetch(url, {
       method: 'PATCH',
       headers,
-      body: JSON.stringify({ title })
+      body: JSON.stringify({ title }),
     });
 
     if (!response.ok) {
@@ -141,10 +141,10 @@ export class SessionService {
    */
   async setFavorite(sessionId: string, favorite: boolean): Promise<void> {
     const config = this.config.getConfig();
-    const url = `${config.apiUrl}/sessions/${sessionId}`;
+    const url = this.config.buildUrl(`/sessions/${sessionId}`);
 
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     };
 
     if (config.apiKey) {
@@ -154,7 +154,7 @@ export class SessionService {
     const response = await fetch(url, {
       method: 'PATCH',
       headers,
-      body: JSON.stringify({ favorite })
+      body: JSON.stringify({ favorite }),
     });
 
     if (!response.ok) {
@@ -171,10 +171,10 @@ export class SessionService {
    */
   async setProject(sessionId: string, projectId: string | null): Promise<void> {
     const config = this.config.getConfig();
-    const url = `${config.apiUrl}/sessions/${sessionId}`;
+    const url = this.config.buildUrl(`/sessions/${sessionId}`);
 
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     };
 
     if (config.apiKey) {
@@ -184,7 +184,7 @@ export class SessionService {
     const response = await fetch(url, {
       method: 'PATCH',
       headers,
-      body: JSON.stringify({ project_id: projectId })
+      body: JSON.stringify({ project_id: projectId }),
     });
 
     if (!response.ok) {

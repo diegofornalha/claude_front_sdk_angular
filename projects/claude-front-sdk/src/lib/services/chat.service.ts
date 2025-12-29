@@ -10,7 +10,7 @@ import { LoggerService } from './logger.service';
  * Segue padrões do Angular AI SDK para streaming com LLMs
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ChatService {
   private http = inject(HttpClient);
@@ -33,7 +33,7 @@ export class ChatService {
   chatHistory = computed(() => {
     return this.messages().map(msg => ({
       role: msg.role,
-      content: msg.content
+      content: msg.content,
     }));
   });
 
@@ -48,12 +48,15 @@ export class ChatService {
     const isNewSession = this.messages().length === 0;
 
     // Adiciona mensagem do usuário
-    this.messages.update(msgs => [...msgs, {
-      id: Date.now().toString(),
-      role: 'user',
-      content: userMessage,
-      timestamp: Date.now()
-    }]);
+    this.messages.update(msgs => [
+      ...msgs,
+      {
+        id: Date.now().toString(),
+        role: 'user',
+        content: userMessage,
+        timestamp: Date.now(),
+      },
+    ]);
 
     this.input.set('');
     this.isStreaming.set(true);
@@ -64,9 +67,9 @@ export class ChatService {
 
       // Se era nova sessão, atualiza lista de sessões na sidebar
       if (isNewSession) {
-        this.sessionService.list().catch(err =>
-          this.logger.error('ChatService', 'Erro ao atualizar sessões:', err)
-        );
+        this.sessionService
+          .list()
+          .catch(err => this.logger.error('ChatService', 'Erro ao atualizar sessões:', err));
       }
     } catch (err: any) {
       this.error.set(err.message || 'Erro ao processar mensagem');
@@ -81,11 +84,11 @@ export class ChatService {
    */
   private async streamChat(message: string): Promise<void> {
     const config = this.config.getConfig();
-    const url = `${config.apiUrl}/chat/stream`;
+    const url = this.config.buildUrl('/chat/stream');
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'X-Client-Project': 'chat-angular'
+      'X-Client-Project': 'chat-angular',
     };
 
     if (config.apiKey) {
@@ -100,13 +103,13 @@ export class ChatService {
       // Só envia session_id se já tiver (sessão existente)
       // Para novo chat, deixa undefined para o backend gerar
       session_id: this.currentSessionId() || undefined,
-      model: this.currentModel()
+      model: this.currentModel(),
     };
 
     const response = await fetch(url, {
       method: 'POST',
       headers,
-      body: JSON.stringify(request)
+      body: JSON.stringify(request),
     });
 
     if (!response.ok) {
@@ -124,12 +127,15 @@ export class ChatService {
     const assistantMessageId = Date.now().toString();
 
     // Adiciona mensagem vazia do assistente
-    this.messages.update(msgs => [...msgs, {
-      id: assistantMessageId,
-      role: 'assistant',
-      content: '',
-      timestamp: Date.now()
-    }]);
+    this.messages.update(msgs => [
+      ...msgs,
+      {
+        id: assistantMessageId,
+        role: 'assistant',
+        content: '',
+        timestamp: Date.now(),
+      },
+    ]);
 
     try {
       while (true) {
@@ -170,19 +176,23 @@ export class ChatService {
                 // Atualiza mensagem do assistente
                 this.messages.update(msgs =>
                   msgs.map(msg =>
-                    msg.id === assistantMessageId
-                      ? { ...msg, content: assistantMessage }
-                      : msg
+                    msg.id === assistantMessageId ? { ...msg, content: assistantMessage } : msg
                   )
                 );
               }
 
               // Se recebeu sinal para recarregar sessões (após comando de gerenciamento)
               if (parsed.refresh_sessions) {
-                this.logger.debug('ChatService', 'Recarregando sessões após comando:', parsed.command);
-                this.sessionService.list().catch(err =>
-                  this.logger.error('ChatService', 'Erro ao recarregar sessões:', err)
+                this.logger.debug(
+                  'ChatService',
+                  'Recarregando sessões após comando:',
+                  parsed.command
                 );
+                this.sessionService
+                  .list()
+                  .catch(err =>
+                    this.logger.error('ChatService', 'Erro ao recarregar sessões:', err)
+                  );
               }
 
               if (parsed.error) {
@@ -205,7 +215,7 @@ export class ChatService {
   private async fetchCurrentSessionId(): Promise<void> {
     try {
       const config = this.config.getConfig();
-      const url = `${config.apiUrl}/session/current`;
+      const url = this.config.buildUrl('/session/current');
 
       const headers: Record<string, string> = {};
       if (config.apiKey) {
@@ -253,6 +263,13 @@ export class ChatService {
    * @param forceReload - Se true, recarrega mesmo se já tiver mensagens
    */
   async loadSession(sessionId: string, forceReload = false): Promise<void> {
+    // Validar que sessionId é um UUID válido
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(sessionId)) {
+      this.logger.warn('ChatService', `SessionId inválido ignorado: ${sessionId}`);
+      return;
+    }
+
     const previousSessionId = this.currentSessionId();
     const isSameSession = previousSessionId === sessionId;
     const hasExistingMessages = this.messages().length > 0;
@@ -267,25 +284,35 @@ export class ChatService {
       return;
     }
 
-    // 2. Se flag skipNextLoad ativa (streaming acabou de terminar), pular
-    if (this.skipNextLoad() && !forceReload) {
+    // 2. Se flag skipNextLoad ativa E mesma sessão (streaming acabou de terminar)
+    if (this.skipNextLoad() && isSameSession && !forceReload) {
       this.logger.debug('ChatService', 'Pulando reload - acabou de fazer streaming');
       this.skipNextLoad.set(false);
       return;
     }
 
-    // 3. Se já tem mensagens, não recarregar (fallback)
-    if (hasExistingMessages && !forceReload) {
-      this.logger.debug('ChatService', 'Mantendo mensagens existentes - evitando duplicação');
+    // 3. Se MESMA sessão e já tem mensagens, não recarregar
+    // MAS se MUDOU de sessão, DEVE recarregar!
+    if (isSameSession && hasExistingMessages && !forceReload) {
+      this.logger.debug('ChatService', 'Mesma sessão com mensagens - evitando duplicação');
       return;
     }
 
-    // Se mudou de sessão ou forceReload, limpa e recarrega
+    // Se mudou de sessão, limpa flag de skip
+    if (!isSameSession) {
+      this.skipNextLoad.set(false);
+      this.logger.debug(
+        'ChatService',
+        `Mudou de sessão: ${previousSessionId?.slice(0, 8)} → ${sessionId.slice(0, 8)}`
+      );
+    }
+
+    // Limpa e recarrega
     this.messages.set([]);
 
     try {
       const config = this.config.getConfig();
-      const url = `${config.apiUrl}/sessions/${sessionId}/messages`;
+      const url = this.config.buildUrl(`/sessions/${sessionId}/messages`);
 
       const headers: Record<string, string> = {};
       if (config.apiKey) {
@@ -317,7 +344,7 @@ export class ChatService {
           id: `${sessionId}-${index}`,
           role: msg.role as 'user' | 'assistant',
           content: content || '',
-          timestamp: msg.timestamp ? new Date(msg.timestamp).getTime() : Date.now()
+          timestamp: msg.timestamp ? new Date(msg.timestamp).getTime() : Date.now(),
         };
       });
 

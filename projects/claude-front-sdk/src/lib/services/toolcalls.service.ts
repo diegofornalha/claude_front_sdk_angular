@@ -10,7 +10,7 @@ import { LoggerService } from './logger.service';
  * Mostra "o que está acontecendo nos bastidores" + audit dashboard
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ToolCallsService {
   private http = inject(HttpClient);
@@ -41,13 +41,11 @@ export class ToolCallsService {
    */
   async getRecent(limit = 10, sessionId?: string | null): Promise<ToolCall[]> {
     const sid = sessionId ?? this.currentSessionId;
-    let url = `${this.config.apiUrl}/audit/tools?limit=${limit}`;
+    let url = this.config.buildUrl(`/audit/tools?limit=${limit}`);
     if (sid) {
       url += `&session_id=${sid}`;
     }
-    const response = await firstValueFrom(
-      this.http.get<any>(url)
-    );
+    const response = await firstValueFrom(this.http.get<any>(url));
     // Backend retorna 'recent' não 'tool_calls'
     const toolCalls = response.recent || response.tool_calls || [];
     this.recentToolCalls.set(toolCalls);
@@ -60,13 +58,11 @@ export class ToolCallsService {
   async getStats(sessionId?: string | null): Promise<AuditStats | null> {
     try {
       const sid = sessionId ?? this.currentSessionId;
-      let url = `${this.config.apiUrl}/audit/stats`;
+      let url = this.config.buildUrl('/audit/stats');
       if (sid) {
         url += `?session_id=${sid}`;
       }
-      const response = await firstValueFrom(
-        this.http.get<AuditStats>(url)
-      );
+      const response = await firstValueFrom(this.http.get<AuditStats>(url));
       this.stats.set(response);
       return response;
     } catch (error) {
@@ -80,10 +76,8 @@ export class ToolCallsService {
    */
   async getDebug(sessionId: string): Promise<DebugResponse | null> {
     try {
-      const url = `${this.config.apiUrl}/audit/debug/${sessionId}`;
-      const response = await firstValueFrom(
-        this.http.get<DebugResponse>(url)
-      );
+      const url = this.config.buildUrl(`/audit/debug/${sessionId}`);
+      const response = await firstValueFrom(this.http.get<DebugResponse>(url));
       this.debug.set(response);
       return response;
     } catch (error) {
@@ -101,10 +95,7 @@ export class ToolCallsService {
     this.isPolling.set(true);
     this.pollingInterval = setInterval(async () => {
       try {
-        await Promise.all([
-          this.getRecent(),
-          this.getStats()
-        ]);
+        await Promise.all([this.getRecent(), this.getStats()]);
       } catch (error) {
         this.logger.error('ToolCallsService', 'Erro no polling:', error);
       }
