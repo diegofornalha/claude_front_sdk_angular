@@ -93,6 +93,11 @@ export const routes: Routes = [
       import('./pages/prova/prova-page.component').then(m => m.ProvaPageComponent),
   },
   {
+    path: 'prova/:id',
+    loadComponent: () =>
+      import('./pages/prova/prova-detail.component').then(m => m.ProvaDetailComponent),
+  },
+  {
     path: '**',
     redirectTo: 'new',
   },
