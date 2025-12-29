@@ -176,6 +176,24 @@ import { Session } from '../../../../projects/claude-front-sdk/src/lib/models/se
         }
       </button>
 
+      <!-- Prova Atlantyx -->
+      <button class="nav-item prova-link" routerLink="/prova" routerLinkActive="active">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M9 11l3 3L22 4" />
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+        </svg>
+        @if (!isCollapsed()) {
+          <span>Prova</span>
+        }
+      </button>
+
       <!-- Favoritos (só aparece se tiver favoritos) -->
       @if (!isCollapsed() && favoriteChats().length > 0) {
         <div class="recents-section favorites-section">
@@ -217,7 +235,7 @@ import { Session } from '../../../../projects/claude-front-sdk/src/lib/models/se
                 />
               </svg>
             }
-            <span class="recent-title">{{ chat.titulo }}</span>
+            <span class="recent-title" [title]="chat.titulo">{{ chat.titulo }}</span>
           </button>
           <button class="recent-menu-btn" (click)="toggleRecentMenu(chat.id, $event)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -532,6 +550,20 @@ import { Session } from '../../../../projects/claude-front-sdk/src/lib/models/se
       }
       .new-chat.active {
         background: #c96a4b;
+      }
+
+      /* Prova Atlantyx - Estilo destaque roxo */
+      .prova-link {
+        background: #6366f1;
+        color: white;
+        transition: all 0.2s ease;
+      }
+      .prova-link:hover {
+        background: #4f46e5;
+        transform: scale(1.02);
+      }
+      .prova-link.active {
+        background: #4f46e5;
       }
 
       .spacer {
