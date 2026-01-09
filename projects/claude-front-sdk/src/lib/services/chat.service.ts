@@ -263,9 +263,10 @@ export class ChatService {
    * @param forceReload - Se true, recarrega mesmo se já tiver mensagens
    */
   async loadSession(sessionId: string, forceReload = false): Promise<void> {
-    // Validar que sessionId é um UUID válido
+    // Validar sessionId (aceita UUID padrão ou formato user_{id}_session_{timestamp}_{hash})
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(sessionId)) {
+    const customIdRegex = /^user_\d+_session_\d+_[0-9a-f]+$/i;
+    if (!uuidRegex.test(sessionId) && !customIdRegex.test(sessionId)) {
       this.logger.warn('ChatService', `SessionId inválido ignorado: ${sessionId}`);
       return;
     }

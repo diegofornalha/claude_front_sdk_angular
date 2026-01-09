@@ -917,10 +917,11 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     // Verificar sessionId na rota e carregar mensagens
     this.route.params.subscribe(async params => {
       const sessionId = params['sessionId'];
-      // Validar que sessionId parece um UUID (evita capturar "audit", etc)
+      // Validar sessionId (aceita UUID padrão ou formato user_{id}_session_{timestamp}_{hash})
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const customIdRegex = /^user_\d+_session_\d+_[0-9a-f]+$/i;
       const isValidSessionId =
-        sessionId &&
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sessionId);
+        sessionId && (uuidRegex.test(sessionId) || customIdRegex.test(sessionId));
       if (isValidSessionId) {
         // Definir currentSessionId imediatamente da URL
         this.currentSessionId.set(sessionId);
