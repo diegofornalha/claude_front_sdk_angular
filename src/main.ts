@@ -14,6 +14,7 @@ bootstrapApplication(AppComponent, {
     provideRouter(routes),
     provideClaude({
       apiUrl: environment.apiUrl,
+      apiVersion: environment.apiVersion,
       apiKey: environment.apiKey || undefined,
       streaming: environment.streaming,
       defaultModel: environment.defaultModel,

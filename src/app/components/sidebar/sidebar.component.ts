@@ -77,122 +77,114 @@ import { Session } from '../../../../projects/claude-front-sdk/src/lib/models/se
         }
       </button>
 
-      <!-- Projects -->
-      <button class="nav-item" routerLink="/projects" routerLinkActive="active">
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-        </svg>
-        @if (!isCollapsed()) {
-          <span>Projetos</span>
-        }
-      </button>
+      <!-- Projects (apenas para usuários autenticados) -->
+      @if (!isGuestMode()) {
+        <button class="nav-item" routerLink="/projects" routerLinkActive="active">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+          </svg>
+          @if (!isCollapsed()) {
+            <span>Projetos</span>
+          }
+        </button>
+      }
 
-      <!-- Artefatos -->
-      <button class="nav-item" routerLink="/artifacts/my" routerLinkActive="active">
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <circle cx="5" cy="5" r="2" />
-          <circle cx="19" cy="5" r="2" />
-          <circle cx="5" cy="19" r="2" />
-          <circle cx="19" cy="19" r="2" />
-          <line x1="5" y1="7" x2="5" y2="17" />
-          <line x1="19" y1="7" x2="19" y2="17" />
-          <line x1="7" y1="5" x2="17" y2="5" />
-          <line x1="7" y1="19" x2="17" y2="19" />
-        </svg>
-        @if (!isCollapsed()) {
-          <span>Artefatos</span>
-        }
-      </button>
+      <!-- Artefatos (apenas para usuários autenticados) -->
+      @if (!isGuestMode()) {
+        <button class="nav-item" routerLink="/artifacts/my" routerLinkActive="active">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="5" cy="5" r="2" />
+            <circle cx="19" cy="5" r="2" />
+            <circle cx="5" cy="19" r="2" />
+            <circle cx="19" cy="19" r="2" />
+            <line x1="5" y1="7" x2="5" y2="17" />
+            <line x1="19" y1="7" x2="19" y2="17" />
+            <line x1="7" y1="5" x2="17" y2="5" />
+            <line x1="7" y1="19" x2="17" y2="19" />
+          </svg>
+          @if (!isCollapsed()) {
+            <span>Artefatos</span>
+          }
+        </button>
+      }
 
-      <!-- Search -->
-      <button class="nav-item" routerLink="/search" routerLinkActive="active">
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <circle cx="11" cy="11" r="8" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
-        @if (!isCollapsed()) {
-          <span>Busca</span>
-        }
-      </button>
+      <!-- Search (apenas para usuários autenticados) -->
+      @if (!isGuestMode()) {
+        <button class="nav-item" routerLink="/search" routerLinkActive="active">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          @if (!isCollapsed()) {
+            <span>Busca</span>
+          }
+        </button>
+      }
 
-      <!-- Config -->
-      <button class="nav-item" routerLink="/config" routerLinkActive="active">
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <path d="M12 2L2 7l10 5 10-5-10-5z" />
-          <path d="M2 17l10 5 10-5" />
-          <path d="M2 12l10 5 10-5" />
-        </svg>
-        @if (!isCollapsed()) {
-          <span>Config</span>
-        }
-      </button>
+      <!-- Config (apenas para usuários autenticados) -->
+      @if (!isGuestMode()) {
+        <button class="nav-item" routerLink="/config" routerLinkActive="active">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+            <path d="M2 17l10 5 10-5" />
+            <path d="M2 12l10 5 10-5" />
+          </svg>
+          @if (!isCollapsed()) {
+            <span>Config</span>
+          }
+        </button>
+      }
 
-      <!-- Documentos -->
-      <button class="nav-item" routerLink="/documents" routerLinkActive="active">
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <polyline points="14 2 14 8 20 8" />
-          <line x1="16" y1="13" x2="8" y2="13" />
-          <line x1="16" y1="17" x2="8" y2="17" />
-          <polyline points="10 9 9 9 8 9" />
-        </svg>
-        @if (!isCollapsed()) {
-          <span>Documentos</span>
-        }
-      </button>
-
-      <!-- Prova Atlantyx -->
-      <button class="nav-item prova-link" routerLink="/prova" routerLinkActive="active">
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <path d="M9 11l3 3L22 4" />
-          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-        </svg>
-        @if (!isCollapsed()) {
-          <span>Prova</span>
-        }
-      </button>
+      <!-- Documentos (apenas para usuários autenticados) -->
+      @if (!isGuestMode()) {
+        <button class="nav-item" routerLink="/documents" routerLinkActive="active">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10 9 9 9 8 9" />
+          </svg>
+          @if (!isCollapsed()) {
+            <span>Documentos</span>
+          }
+        </button>
+      }
 
       <!-- Favoritos (só aparece se tiver favoritos) -->
       @if (!isCollapsed() && favoriteChats().length > 0) {
@@ -550,20 +542,6 @@ import { Session } from '../../../../projects/claude-front-sdk/src/lib/models/se
       }
       .new-chat.active {
         background: #c96a4b;
-      }
-
-      /* Prova Atlantyx - Estilo destaque roxo */
-      .prova-link {
-        background: #6366f1;
-        color: white;
-        transition: all 0.2s ease;
-      }
-      .prova-link:hover {
-        background: #4f46e5;
-        transform: scale(1.02);
-      }
-      .prova-link.active {
-        background: #4f46e5;
       }
 
       .spacer {
@@ -1054,6 +1032,7 @@ export class SidebarComponent implements OnInit {
   isCollapsed = signal(false);
   isUserMenuOpen = signal(false);
   activeRecentMenu = signal<string | null>(null);
+  isGuestMode = signal(true); // TODO: integrar com auth service quando implementado
   newChatRequested = output<void>();
 
   // Sessões recentes (últimas 15)
